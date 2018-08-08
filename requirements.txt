@@ -1,0 +1,16 @@
+# command line interfaces
+click
+
+# interactive programming
+ipython
+jupyter
+
+# data science and numerical computing
+numpy
+scipy
+scikit-learn
+
+# natural language processing
+spacy
+allennlp==0.5.1
+nltk
