@@ -10,6 +10,7 @@ def main(args):
 
     tokenized_lowercased_file = os.path.join(os.path.basename(corpus_location) +
                                              "-tokenized_lc.txt")
+    print("Writing to file: " + tokenized_lowercased_file)
 
     if not os.path.exists(tokenized_lowercased_file):
         nlp = spacy.load("en")
