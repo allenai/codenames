@@ -12,7 +12,7 @@ import warnings
 
 import wikipedia
 
-from config import config
+from gameplay.config import config
 
 dry_run = False
 

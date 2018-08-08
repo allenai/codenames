@@ -6,7 +6,7 @@ import json
 import os
 import sys
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = "gameplay/config.json"
 
 
 class Config(object):

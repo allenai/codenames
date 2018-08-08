@@ -8,7 +8,7 @@ import random
 import gzip
 import os.path
 
-from config import config
+from gameplay.config import config
 
 
 def main():

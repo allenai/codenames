@@ -8,8 +8,8 @@ import platform
 
 import numpy as np
 
-import model
-from config import config
+from gameplay.model import WordEmbedding
+from gameplay.config import config
 
 CLUE_PATTERN = r'^([a-zA-Z]+) ({0})$'
 UNLIMITED = "unlimited"
@@ -27,7 +27,7 @@ class GameEngine(object):
         self.words = np.array(_words, dtype='S11')
 
         # Initialize our word embedding model if necessary.
-        self.model = model.WordEmbedding(config.embedding)
+        self.model = WordEmbedding(config.embedding)
 
         # Initialize random numbers.
         self.generator = np.random.RandomState(seed=seed)

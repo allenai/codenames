@@ -8,7 +8,7 @@ import re
 
 import nltk.tokenize
 
-from config import config
+from gameplay.config import config
 
 
 def main():
