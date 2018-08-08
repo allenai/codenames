@@ -14,8 +14,7 @@ class Dataset():
         self.dataset = dataset
         self.dataset_file = dataset_codes[dataset]
         self.data = []
-        #TODO re-do this code for relative structure once integrated
-        with open("./data/" + self.dataset_file) as f:
+        with open("../data/" + self.dataset_file) as f:
             for line in f.readlines():
                 self.data.append(line.lower().replace("\n", ""))
 
