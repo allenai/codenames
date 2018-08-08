@@ -30,9 +30,6 @@ class Dataset():
         random.shuffle(self.shuffled_data)
         self.dataset_size = len(self.data)
 
-        self.glove = None
-
-
     '''
     Most basic random sampling from a given dataset.  Assumes random samples WITH REPLACEMENT
     in between consecutive games. Optional to pass in number of assassins, positive, and negative words.
@@ -121,10 +118,13 @@ class Dataset():
         return board_words_str
 
 
-    #TODO finish this method.  Work in-progress, so commented out.
     '''
     This samples a "challenge" dataset by returning a dataset containing clusters of similar words
-    (defined by GloVE cos sim).  
+    (defined by GloVE cos sim). 
+    
+    similarity: EmbeddingHandler is the embedding space we will use to calculate similarity.
+    
+    guesser/clue_givers are used to determine blacklists.
     
     In the default case: It selects a random word in the dataset as a "seed" word and 
     adds similar words (with cos distance less than Epsilon).  If not enough words are chosen, another 
@@ -137,40 +137,78 @@ class Dataset():
            ASSASSIN;TEAM1;TEAM2;NEUTRAL
     where each group consists of comma-separated words from the word list.
     '''
-    '''def sample_similar_embeddings(self, size=25, num_assassin=1, num_pos=9, num_neg=8, num_clusters=-1, epsilon = 0.1):
-        #Only need to intitialize once, but don't want to waste time upon object creation
-        if(self.glove == None):
-            f = open("./embeds/glove.6B.50d.txt", 'r')
-            self.glove = {}
-            for line in f:
-                splitLine = line.split()
-                word = splitLine[0]
-                embedding = np.array([float(val) for val in splitLine[1:]])
-                self.glove[word] = embedding
+    #TODO discuss epsilon value
+    def sample_similar_embeddings(self, similarity: EmbeddingHandler, size=25, num_assassin=1, num_pos=9, num_neg=8, num_clusters=-1,
+                                  guesser: EmbeddingHandler = None,
+                                  clue_giver: EmbeddingHandler = None,
+                                  epsilon = 0.3):
+
+        #Return string
+        board_words_str = ""
+
+        blacklisted_dataset = []
+        if guesser != None:
+            blacklisted_dataset.extend([w for w in self.data if w not in guesser.embedding])
+
+        if clue_giver != None:
+            blacklisted_dataset.extend([w for w in self.data if w not in clue_giver.embedding])
+
+        #Since we are using `similarity`'s metric, each potential word has to be in similarity
+        blacklisted_dataset.extend([w for w in self.data if w not in similarity.embedding])
 
         if num_clusters != -1:
-            #TODO the specified case here
-            print("not implemented yet")
+            words = []
+            tries = 1000
+            counter = 0
+            while len(words) < size and counter < tries:
+                words = []
+                seed_words = []
+                while(len(seed_words) < num_clusters):
+                    seed_word = random.sample(self.data, 1)[0]
+                    if seed_word not in seed_words and seed_word not in blacklisted_dataset:
+                        seed_words.append(seed_word)
+                words.extend([w for w in seed_words])
+
+                similar_words = []
+
+                for word in self.data:
+                    if word in seed_words or word in blacklisted_dataset or word in similar_words:
+                        continue
+                    for seed_word in seed_words:
+                        seed_embed = similarity.embedding[seed_word]
+                        if cosine(seed_embed, similarity.embedding[word]) < epsilon:
+                            similar_words.append(word)
+                if len(similar_words) >= size-num_clusters:
+                    words.extend(random.sample(similar_words, size-num_clusters))
+                counter += 1
+            if len(words) < size:
+                raise ValueError("Cannot find enough words with the cluster/size combo.  Try increasing num_clusters or"
+                                 "increasing epsilon")
+
+            random.shuffle(words)
         else:
             words = []
             while len(words) < size:
                 seed_word = ""
-                while seed_word in words or seed_word == "":
+                while seed_word in words or seed_word == "" or seed_word in blacklisted_dataset:
                     seed_word = random.sample(self.data, 1)[0]
-                import pdb; pdb.set_trace()
-
-
-                seed_embed = np.zeros([50])
-                for subword in seed_word.split(" "):
-                    seed_embed +=
+                words.append(seed_word)
+                seed_embed = similarity.embedding[seed_word]
                 for word in self.data:
-                    if word == seed_word:
+                    if word == seed_word or word in blacklisted_dataset:
                         continue
 
-                    if cosine(self.glove[seed_word], self.glove[word]) < epsilon:
+                    if cosine(seed_embed, similarity.embedding[word]) < epsilon:
                         words.append(word)
+
             random.shuffle(words)
-        return words'''
+        # Segments sampled words into gameboard's accepted format
+        board_words_str += ';'.join(
+            [','.join(words[0:num_assassin]), ','.join(words[num_assassin:num_assassin + num_pos]),
+             ','.join(words[num_assassin + num_pos:num_assassin + num_pos + num_neg]),
+             ','.join(words[num_assassin + num_pos + num_neg:])])
+
+        return board_words_str
 
 
 
@@ -178,9 +216,9 @@ def main():
     guesser_embed = EmbeddingHandler("./test_embeds.p")
     print("TESTS")
     d =  Dataset(dataset="CODENAMES")
-    for i in range(100):
-        sample = d.sample_random_without_replacement(guesser=guesser_embed, clue_giver=guesser_embed)
-        print(sample)
+    #for i in range(100):
+    sample = d.sample_similar_embeddings(similarity=guesser_embed, guesser=guesser_embed, clue_giver=guesser_embed, num_clusters=5)
+    print(sample)
 
 
 if __name__ == "__main__":
