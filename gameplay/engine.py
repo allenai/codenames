@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+
 
 import itertools
 import re
@@ -153,7 +153,7 @@ class GameEngine(object):
             # Multiply similarity scores by this factor for any clue
             # corresponding to this many words.
             bonus_factor = count ** gamma
-            for group in itertools.combinations(range(num_words), count):
+            for group in itertools.combinations(list(range(num_words)), count):
                 words = self.player_words[list(group)]
                 clue, score = self.model.get_clue(clue_words=words,
                                                   pos_words=self.player_words,
@@ -163,13 +163,13 @@ class GameEngine(object):
                     best_score.append(score * bonus_factor)
                     saved_clues.append((clue, words))
         num_clues = len(saved_clues)
-        order = sorted(xrange(num_clues), key=lambda k: best_score[k], reverse=True)
+        order = sorted(range(num_clues), key=lambda k: best_score[k], reverse=True)
 
         if verbose:
             self.print_board(spymaster=True)
             for i in order[:10]:
                 clue, words = saved_clues[i]
-                say(u'{0:.3f} {1} = {2}'.format(best_score[i], ' + '.join([w.upper() for w in words]), clue))
+                say('{0:.3f} {1} = {2}'.format(best_score[i], ' + '.join([w.upper() for w in words]), clue))
 
         clue, words = saved_clues[order[0]]
         self.unfound_words[self.player].update(words)
@@ -210,7 +210,7 @@ class GameEngine(object):
         num_guesses = 0
         while (self.expert and count == UNLIMITED) or num_guesses < count + 1:
             self.print_board(clear_screen=(num_guesses == 0))
-            say(u'{0} your clue is: {1} {2}'.format(self.player_label, word, count))
+            say('{0} your clue is: {1} {2}'.format(self.player_label, word, count))
 
             num_guesses += 1
             while True:
@@ -292,7 +292,7 @@ def say(message):
 
 def ask(message):
     try:
-        return raw_input(message)
+        return input(message)
     except KeyboardInterrupt:
         say('\nBye.')
         sys.exit(0)

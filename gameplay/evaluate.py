@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import print_function, division
+
 
 import argparse
 import glob
@@ -59,7 +59,7 @@ def main():
                 saved_clues.append((word, clue))
         num_clues = len(saved_clues)
         order = sorted(
-            xrange(num_clues), key=lambda k: best_score[k], reverse=True)
+            range(num_clues), key=lambda k: best_score[k], reverse=True)
         for i in order[:args.top_singles]:
             word, clue = saved_clues[i]
             print('{0:.3f} {1} = {2}'.format(
@@ -85,7 +85,7 @@ def main():
                     saved_clues.append(((i1, i2), clue))
         num_clues = len(saved_clues)
         order = sorted(
-            xrange(num_clues), key=lambda k: best_score[k], reverse=True)
+            range(num_clues), key=lambda k: best_score[k], reverse=True)
         for i in order[:args.top_pairs]:
             i1, i2 = saved_clues[i][0]
             clue = saved_clues[i][1]
