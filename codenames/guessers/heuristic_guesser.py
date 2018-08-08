@@ -3,7 +3,7 @@ from typing import List
 from overrides import overrides
 
 from codenames.guessers.guesser import Guesser
-import codenames.util as util
+import codenames.utils.game_utils as util
 
 
 class HeuristicGuesser(Guesser):
