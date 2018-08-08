@@ -35,6 +35,8 @@ class Dataset():
     in between consecutive games. Optional to pass in number of assassins, positive, and negative words.
     By default, the number of neutral cards is determined by size-num_assassin-num_pos-num_neg.
     
+    guesser/clue_givers are used to determine blacklists.
+    
     Note that the return is of the format:
         ASSASSIN;TEAM1;TEAM2;NEUTRAL
     where each group consists of comma-separated words from the word list.
@@ -68,6 +70,8 @@ class Dataset():
        Random sampling for a dataset that assumes random samples WITHOUT REPLACEMENT in between consecutive games. 
        Optional to pass in number of assassins, positive, and negative words.
        By default, the number of neutral cards is determined by size-num_assassin-num_pos-num_neg.
+       
+       guesser/clue_givers are used to determine blacklists.
 
        Note that the return is of the format:
            ASSASSIN;TEAM1;TEAM2;NEUTRAL
