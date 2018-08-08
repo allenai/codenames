@@ -9,6 +9,7 @@ jupyter
 numpy
 scipy
 scikit-learn
+gensim
 
 # natural language processing
 spacy
