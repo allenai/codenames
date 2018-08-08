@@ -13,7 +13,7 @@ def main(args):
 
     if not os.path.exists(tokenized_lowercased_file):
         nlp = spacy.load("en")
-        with open(tokenized_lowercased_file) as tokenized_lc_file:
+        with open(tokenized_lowercased_file, "w") as tokenized_lc_file:
             for line in read_lines(corpus_location):
                 sentence = line.split("\t")[1]
                 tokens = [w.text.lower() for w in nlp(sentence)]
