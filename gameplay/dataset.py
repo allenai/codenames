@@ -4,6 +4,7 @@ dataset_codes = {"CODENAMES": "codenames_words.txt", "SCIENCE": "science_words.t
                  "COMMON": "common_nouns_extrinsic.txt", "PROPER": "proper_nouns_extrinsic.txt"}
 
 class Dataset():
+    
     '''
     Initializes dataset from text file.  Assumes dataset is a code found in dataset_codes
     and that the text file has one word per line
@@ -25,6 +26,7 @@ class Dataset():
         random.shuffle(self.shuffled_data)
         self.dataset_size = len(self.data)
 
+
     '''
     Most basic random sampling from a given dataset.  Assumes random samples WITH REPLACEMENT
     in between consecutive games. Optional to pass in number of assassins, positive, and negative words.
@@ -45,6 +47,7 @@ class Dataset():
                                      ','.join(words[num_assassin + num_pos + num_neg:])])
 
         return board_words_str
+
 
     '''
        Random sampling for a dataset that assumes random samples WITHOUT REPLACEMENT in between consecutive games. 
