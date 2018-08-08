@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
+
 
 import argparse
 import re
 
-import engine
+from gameplay.engine import GameEngine
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
     spy2 = d[args.config[2]]
     team2 = d[args.config[3]]
 
-    e = engine.GameEngine(seed=args.seed, expert=args.expert)
+    e = GameEngine(seed=args.seed, expert=args.expert)
     e.play_game(spy1, team1, spy2, team2, init=args.init)
 
 

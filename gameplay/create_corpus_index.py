@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import print_function, division
+
 
 import argparse
 import io
@@ -8,7 +8,7 @@ import os
 import os.path
 from functools import partial
 
-from config import config
+from gameplay.config import config
 
 # Maximum number of wikipedia articles to index per word. Can be
 # overridden using the --max-size command-line argument.

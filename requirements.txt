@@ -9,8 +9,12 @@ jupyter
 numpy
 scipy
 scikit-learn
+gensim
 
 # natural language processing
 spacy
 allennlp==0.5.1
 nltk
+
+wikipedia
+pywikibot

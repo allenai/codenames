@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import print_function
+
 
 import json
 import os
 import sys
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = "gameplay/config.json"
 
 
 class Config(object):

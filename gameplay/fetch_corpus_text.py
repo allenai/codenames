@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
+
 
 import argparse
 import gzip
@@ -12,7 +12,7 @@ import warnings
 
 import wikipedia
 
-from config import config
+from gameplay.config import config
 
 dry_run = False
 
@@ -45,7 +45,7 @@ def fetch(word, min_size=5e6):
         # Read all page titles.
         page_titles = [line.rstrip() for line in f_in]
         # Generate a random order of page titles.
-        order = range(len(page_titles))
+        order = list(range(len(page_titles)))
         random.shuffle(order)
         print('Fetching from {0} pages for {1}.'.format(len(page_titles), word))
 

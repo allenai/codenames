@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
+
 
 import argparse
 import gzip
@@ -8,7 +8,7 @@ import re
 
 import nltk.tokenize
 
-from config import config
+from gameplay.config import config
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
             total_freq[freq_key] = cross_freq[freq_key] = 0
             corpus_stats[freq_key] = (0, 0)
     print('Wordlist contains {0} compound words:'.format(len(compound)))
-    print(compound.keys())
+    print(list(compound.keys()))
 
     for word in word_list:
 

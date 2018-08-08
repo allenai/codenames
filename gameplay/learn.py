@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
+
 
 import argparse
 import warnings
@@ -8,7 +8,7 @@ import random
 import gzip
 import os.path
 
-from config import config
+from gameplay.config import config
 
 
 def main():
@@ -80,7 +80,7 @@ def main():
                         sentences.append(line)
 
             # Shuffle sentences for this pair of words into a random order.
-            sentence_order = range(len(sentences))
+            sentence_order = list(range(len(sentences)))
             random.shuffle(sentence_order)
 
             # Save shuffled sentences to the output corpus file.
