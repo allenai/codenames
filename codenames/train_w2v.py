@@ -18,6 +18,7 @@ def main(args):
                 sentence = line.split("\t")[1]
                 tokens = [w.text.lower() for w in nlp(sentence)]
                 tokenized_lc_file.write(' '.join(tokens))
+        tokenized_lc_file.close()
 
 
 if __name__ == '__main__':
