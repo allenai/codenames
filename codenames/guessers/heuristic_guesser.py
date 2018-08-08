@@ -10,7 +10,7 @@ class HeuristicGuesser(Guesser):
     @overrides
     def guess(self,
               clue: str,
-              count: str,
+              count: int,
               game_state: List[int],
               current_score: int) -> List[str]:
         available_options = util.get_available_choices(self.board, game_state)
