@@ -8,8 +8,8 @@ def main(args):
     corpus_location = args.corpus_location
     save_dir = args.save_dir
 
-    tokenized_lowercased_file = os.path.join(os.path.basename(corpus_location) +
-                                             "-tokenized_lc.txt")
+    tokenized_lowercased_file = os.path.join(os.path.dirname(corpus_location),
+                                             os.path.basename(corpus_location) + "-tokenized_lc.txt")
     print("Writing to file: " + tokenized_lowercased_file)
 
     if not os.path.exists(tokenized_lowercased_file):
