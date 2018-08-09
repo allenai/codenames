@@ -3,6 +3,7 @@ from random import choices, shuffle
 from typing import List
 
 from codenames.clue_givers.giver import Giver
+from codenames.clue_givers.heuristicgiver import HeuristicGiver
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 from codenames.guessers.heuristic_guesser import HeuristicGuesser
@@ -14,8 +15,6 @@ SCORE_CORRECT_GUESS = 1
 SCORE_INCORRECT_GUESS = -1
 SCORE_ASSASSIN_GUESS = -5
 SCORE_CIVILIAN_GUESS = -1
-
-
 
 
 class GameWrapper:
@@ -175,8 +174,11 @@ class RandomGuesser(Guesser):
 def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=None):
     logging.info('||| initializing all modules.')
     game = GameWrapper(board_size, board_data)
-    giver = RandomGiver(game.engine.board, [])
-    guesser = HeuristicGuesser(game.engine.board, EmbeddingHandler("tests/fixtures/model.txt"))
+
+    embedding_handler = EmbeddingHandler('tests/fixtures/model.txt')
+
+    giver = HeuristicGiver(game.engine.board, game.engine.owner, embedding_handler)
+    guesser = HeuristicGuesser(game.engine.board, embedding_handler)
 
     logging.info('||| data: {}.'.format(list(zip(game.engine.board, game.engine.owner))))
 
@@ -186,6 +188,7 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
         # get a list of clues.
         logging.info('||| calling giver.get_next_clue.')
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
+        assert len(clue_objects) > 0
         # find the first legal clue, then proceed.
         first_valid_clue = None
         for clue in clue_objects:

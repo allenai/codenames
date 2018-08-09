@@ -24,7 +24,7 @@ class GameEngine(object):
         # TODO: Max length of 11 is hardcoded here and in print_board()
         with open(config.word_list) as f:
             _words = [line.rstrip().lower().replace(' ', '_') for line in f.readlines()]
-        self.words = np.array(_words, dtype='S11')
+        self.words = np.array(_words)
 
         # Initialize our word embedding model if necessary.
         self.model = WordEmbedding(config.embedding)
