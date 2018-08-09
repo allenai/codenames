@@ -13,9 +13,15 @@ class EmbeddingHandler:
     embedding_file : `str`
         Location of pickled embeddings
     """
-    def __init__(self, embedding_file: str):
+    def __init__(self, embedding_file: str) -> None:
         # str -> numpy array
         self.embedding = pickle.load(open(embedding_file, "rb"))
+
+    def get_word_vector(self, word: str) -> numpy.ndarray:
+        word = word.lower()
+        if word not in self.embedding:
+            return None
+        return self.embedding[word]
 
     def sort_options_by_similarity(self,
                                    clue: str,
