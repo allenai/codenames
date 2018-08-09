@@ -41,10 +41,10 @@ def main(args):
     model = Word2Vec(
         sentences=all_sentences,
         size=300,
-        window=10,
+        window=7,
         workers=workers,
         negative=10,
-        min_count=50,
+        min_count=10,
         sg=1,
         iter=10
     )
