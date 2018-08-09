@@ -22,7 +22,7 @@ def main(args):
 
     all_sentences = []
     if not os.path.exists(tokenized_lowercased_filename):
-        print("Writing to file: " + tokenized_lowercased_filename)
+        logging.info("Writing to file: " + tokenized_lowercased_filename)
         nlp = spacy.load("en")
         with open(tokenized_lowercased_filename, "w") as tokenized_lc_file:
             for line in read_lines(corpus_location):
