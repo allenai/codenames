@@ -25,10 +25,8 @@ class Giver:
     def __init__(self,
                  board: List[str],
                  allIDs: List[int]) -> None:
-                 #embedding_handler: EmbeddingHandler) -> None:
         self.board = board
         self.allIDs = allIDs
-        #self.embedding_handler = embedding_handler
 
     def get_next_clue(self,
                       game_state: List[int],

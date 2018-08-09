@@ -5,13 +5,17 @@ from typing import List
 from codenames.clue_givers.giver import Giver
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
-from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD
+from codenames.guessers.heuristic_guesser import HeuristicGuesser
+from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD, Clue
 from codenames.gameplay.engine import GameEngine
+import logging
 
 SCORE_CORRECT_GUESS = 1
 SCORE_INCORRECT_GUESS = -1
-SCORE_ASSASSIN_GUESS = -1
-SCORE_CIVILIAN_GUESS = 0
+SCORE_ASSASSIN_GUESS = -5
+SCORE_CIVILIAN_GUESS = -1
+
+
 
 
 class GameWrapper:
@@ -99,12 +103,12 @@ class GameWrapper:
         # the engine pertaining to turn info.
         self.engine.next_turn()
 
-        return guess_list_rewards
+        return guess_list_rewards + [0] * (len(guessed_words) - len(guess_list_rewards))
 
     # The engine was designed for a 2-player experience. In the 1-player
     # version of the game, there is an imaginary team2 which is pretty
     # boring: it reveals one of the team2 cards in each turn. This method
-    # simulates the imaginary boring team2 for the 1-player version of the 
+    # simulates the imaginary boring team2 for the 1-player version of the
     # game.
     def apply_team2_guesses(self):
         team2_guess = None
@@ -133,10 +137,8 @@ class RandomGiver(Giver):
   A clue giver who randomly picks the clue word from a vocabulary.
   '''
 
-    def __init__(self, board: List[str], target_IDs: List[str], embedding_handler: EmbeddingHandler,
-                 vocab=None):
+    def __init__(self, board: List[str], target_IDs: List[str], vocab=None):
         super().__init__(board, target_IDs)
-        self.embedding_handler = embedding_handler
         if vocab is None:
             vocab = ['I', 'have', 'no', 'clue', 'what', 'I', 'am', 'doing']
         self.vocab = vocab
@@ -154,10 +156,9 @@ class RandomGuesser(Guesser):
   A guesser who randomly picks among unrevealed board words.
   '''
 
-    def __init__(self, board: List[str], embedding_handler: EmbeddingHandler):
+    def __init__(self, board: List[str]):
         super().__init__(board)
         self.board = board
-        self.embedding_handler = embedding_handler
 
     def guess(self, clue_word, count, game_state, cumulative_score):
         unrevealed_words = []
@@ -171,18 +172,18 @@ class RandomGuesser(Guesser):
 
 
 def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=None):
-    print('||| initializing all modules.')
+    logging.info('||| initializing all modules.')
     game = GameWrapper(board_size, board_data)
-    giver = RandomGiver()
-    guesser = RandomGuesser(game.engine.board)
+    giver = RandomGiver(game.engine.board, [])
+    guesser = HeuristicGuesser(game.engine.board, EmbeddingHandler("tests/fixtures/weights.txt"))
 
-    print('||| data: {}.'.format(list(zip(game.engine.board, game.engine.owner))))
+    logging.info('||| data: {}.'.format(list(zip(game.engine.board, game.engine.owner))))
 
     turn = 1
     while not game.is_game_over():
-        print('||| starting turn {}'.format(turn))
+        logging.info('||| starting turn {}'.format(turn))
         # get a list of clues.
-        print('||| calling giver.get_next_clue.')
+        logging.info('||| calling giver.get_next_clue.')
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
         # find the first legal clue, then proceed.
         first_valid_clue = None
@@ -197,25 +198,27 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
-        print('||| calling guesser with the first valid clue: ({}, {}).'.format(clue.clue_word, clue.count))
+        logging.info('||| calling guesser with the first valid clue: ({}, {}).'.format(clue.clue_word, clue.count))
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
-        print('||| guesser said: {}'.format(guessed_words))
+        logging.info('||| guesser said: {}'.format(guessed_words))
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
-        print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))))
+        logging.info('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))))
         guesser.report_reward(guess_list_rewards)
         turn += 1
-        print('||| game is over? {}'.format(game.is_game_over()))
+        logging.info('||| game is over? {}'.format(game.is_game_over()))
 
         if not game.is_game_over():
             print('||| now, the imaginary team2 will "play".')
             team2_guessed_words = game.apply_team2_guesses()
             print('||| team2 revealed that the following words belong to them: {}'.format(team2_guessed_words))
 
-    print('||| result: {}'.format(game.result))
-    print('||| score: {}'.format(game.cumulative_score))
+    logging.info('||| result: {}'.format(game.result))
+    logging.info('||| score: {}'.format(game.cumulative_score))
+
 
 def main():
     play_game()
   
+
 if __name__== "__main__":
     main()
