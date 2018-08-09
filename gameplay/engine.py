@@ -52,17 +52,17 @@ class GameEngine(object):
         self.board = self.words[shuffle]
 
         # Specify the layout for this game.
-        assignments = self.generator.permutation(size * size)
+        _assignments = self.generator.permutation(size * size)
         self.owner = np.empty(size * size, int)
-        self.owner[assignments[0]] = 0  # assassin
-        self.owner[assignments[1:10]] = 1  # first player: 9 words
-        self.owner[assignments[10:18]] = 2  # second player: 8 words
-        self.owner[assignments[18:]] = 3  # bystander: 7 words
+        self.owner[_assignments[0]] = 0  # assassin
+        self.owner[_assignments[1:10]] = 1  # first player: 9 words
+        self.owner[_assignments[10:18]] = 2  # second player: 8 words
+        self.owner[_assignments[18:]] = 3  # bystander: 7 words
 
         self.assassin_word = self.board[self.owner == 0]
 
         # All cards are initially visible.
-        self.visible = np.ones_like(self.owner, dtype=bool)
+        self.assignment_not_revealed = np.ones_like(self.owner, dtype=bool)
 
         self.num_turns = -1
 
@@ -105,13 +105,13 @@ class GameEngine(object):
 
         self.board = np.array(board)
         self.owner = np.array(owner)
-        self.visible = np.array(visible)
+        self.assignment_not_revealed = np.array(visible)
 
         # Perform a random shuffle of the board.
         shuffle = self.generator.permutation(size * size)
         self.board = self.board[shuffle]
         self.owner = self.owner[shuffle]
-        self.visible = self.visible[shuffle]
+        self.assignment_not_revealed = self.assignment_not_revealed[shuffle]
 
         self.assassin_word = self.board[self.owner == 0]
         self.num_turns = -1
@@ -126,7 +126,7 @@ class GameEngine(object):
 
         board = self.board.reshape(self.size, self.size)
         owner = self.owner.reshape(self.size, self.size)
-        visible = self.visible.reshape(self.size, self.size)
+        visible = self.assignment_not_revealed.reshape(self.size, self.size)
 
         for row in range(self.size):
             for col in range(self.size):
@@ -219,12 +219,12 @@ class GameEngine(object):
                 if guess == '':
                     # Team does not want to make any more guesses.
                     return True
-                if guess in self.board[self.visible]:
+                if guess in self.board[self.assignment_not_revealed]:
                     break
                 say('Invalid guess, should be a visible word.')
 
             loc = np.where(self.board == guess)[0]
-            self.visible[loc] = False
+            self.assignment_not_revealed[loc] = False
 
             if guess == self.assassin_word:
                 say('{0} You guessed the assasin - game over!'.format(self.player_label))
@@ -253,9 +253,9 @@ class GameEngine(object):
         self.opponent = (self.player + 1) % 2
 
         self.player_label = '<>'[self.player] * 3
-        self.player_words = self.board[(self.owner == self.player + 1) & self.visible]
-        self.opponent_words = self.board[(self.owner == self.opponent + 1) & self.visible]
-        self.neutral_words = self.board[(self.owner == 3) & self.visible]
+        self.player_words = self.board[(self.owner == self.player + 1) & self.assignment_not_revealed]
+        self.opponent_words = self.board[(self.owner == self.opponent + 1) & self.assignment_not_revealed]
+        self.neutral_words = self.board[(self.owner == 3) & self.assignment_not_revealed]
 
     def play_turn(self, spymaster='human', team='human'):
 

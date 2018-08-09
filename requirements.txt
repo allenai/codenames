@@ -18,3 +18,4 @@ nltk
 
 wikipedia
 pywikibot
+nltk

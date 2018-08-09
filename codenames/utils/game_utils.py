@@ -3,13 +3,13 @@ from typing import List
 
 UNREVEALED = -1
 
-GOOD = 0
+GOOD = 1
 
-BAD = 1
+BAD = 2
 
-CIVILIAN = 2
+CIVILIAN = 3
 
-ASSASSIN = 3
+ASSASSIN = 0
 
 
 def get_available_choices(board: List[str],
