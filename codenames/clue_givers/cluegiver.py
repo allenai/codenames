@@ -10,6 +10,8 @@ import numpy as np
 import sklearn.cluster
 from codenames.utils.game_utils import get_available_choices, Clue
 import operator
+from typing import List
+import logging
 #import EmbeddingHandler as embed
 #model = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
 #Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
@@ -17,7 +19,7 @@ import operator
 class ClueGiver(Giver):
 
     def __init__(self, board: [str],
-                 allIDs: [int],
+                 allIDs: List[int],
                  embeddinghandler: EmbeddingHandler):
         #self.board = board
         super().__init__(board, allIDs)
@@ -25,36 +27,36 @@ class ClueGiver(Giver):
         #TODO consider neutral words and assassin
         self.neg_words = [word for word in board if word not in self.pos_words]
         #self.model = embeddinghandler.embedding
-        self.model = embeddinghandler
+        self.embedding_handler = embeddinghandler
 
     NUM_CLUES = 10
     ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
-    def __get_clues(self, group, neg_words, num_clues=NUM_CLUES):
+    def _get_clues(self, group, neg_words, num_clues=NUM_CLUES):
         clues = []
         count = len(group)
         
-        clue_indices = [self.model.vocab[word].index for word in group]
-        clue_vectors = self.model.syn0[clue_indices]
-        neg_indices = [self.model.vocab[word].index for word in neg_words]
-        neg_vectors = self.model.syn0[neg_indices]
+        clue_indices = [self.embedding_handler.vocab[word].index for word in group]
+        clue_vectors = self.embedding_handler.syn0[clue_indices]
+        neg_indices = [self.embedding_handler.vocab[word].index for word in neg_words]
+        neg_vectors = self.embedding_handler.syn0[neg_indices]
         
         mean_vector = clue_vectors.mean(axis=0)
         mean_vector /= np.sqrt(mean_vector.dot(mean_vector))
 
-        cosines = np.dot(self.model.syn0[:, np.newaxis],mean_vector).reshape(-1) #shape (vocab_size,)
+        cosines = np.dot(self.embedding_handler.syn0[:, np.newaxis], mean_vector).reshape(-1) #shape (vocab_size,)
         closest = np.argsort(cosines)[::-1]
         
 
         for i in range(num_clues):
             clue = None
             clue_index = closest[i]
-            clue = self.model.index2word[clue_index]
-            clue_vector = self.model.syn0[clue_index]
+            clue = self.embedding_handler.index2word[clue_index]
+            clue_vector = self.embedding_handler.syn0[clue_index]
             clue_cosine = np.dot(clue_vectors[:, np.newaxis], clue_vector)
             neg_cosine = np.dot(neg_vectors[:, np.newaxis], clue_vector)
             min_clue_cosine = np.min(clue_cosine)
-            print('potential clue')
-            print(clue)
+            logging.info('potential clue')
+            logging.info(clue)
             max_neg_cosine = np.max(neg_cosine)
             if max_neg_cosine >= min_clue_cosine:
                 continue
@@ -64,19 +66,19 @@ class ClueGiver(Giver):
     '''List of Clues sorted by descending Cosine distance'''
     def get_next_clue(self, game_state: [int],
                       score: int):
-        print(self.pos_words)
-        print(self.neg_words)
+        logging.info(self.pos_words)
+        logging.info(self.neg_words)
         available_targets = [word for word in self.pos_words if game_state[self.board.index(word)] != -1]
-        print(available_targets)
+        logging.info(available_targets)
         all_clues = []
         num_words = len(available_targets)
         for count in range(num_words, 0, -1):
             for group in combinations(range(num_words),count):
-                print(group, self.neg_words)
+                logging.info(group, self.neg_words)
                 target_group = [available_targets[i] for i in group]
-                print('target words')
-                print(target_group)
-                all_clues.append(self.__get_clues(target_group, self.neg_words))
+                logging.info('target words')
+                logging.info(target_group)
+                all_clues.append(self._get_clues(target_group, self.neg_words))
         all_clues = list(chain.from_iterable(all_clues))
         all_clues.sort(key=operator.itemgetter(1))
         all_clues = [clue[0] for clue in all_clues]
@@ -91,8 +93,8 @@ def main():
     test_allIDs = [1, 2, 2, 1, -1, 1, 2, 3]
     test_target = ["woman", "boy"]
     cg = ClueGiver(test_board, test_allIDs, test_embed)
-    print('cllllue')
-    print(cg.get_next_clue([-1, 2, 2, 1, -1, 1, 2, 3], 3))
+    logging.info('cllllue')
+    logging.info(cg.get_next_clue([-1, 2, 2, 1, -1, 1, 2, 3], 3))
 
 
 if __name__ == "__main__":
