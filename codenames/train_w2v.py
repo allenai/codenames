@@ -4,7 +4,9 @@ import os
 from codenames.utils.file_utils import read_lines
 import spacy
 from gensim.models import Word2Vec
+import logging
 
+logging.getLogger().setLevel(logging.INFO)
 
 def main(args):
     corpus_location = args.corpus_location
@@ -32,6 +34,8 @@ def main(args):
         tokenized_lc_file.close()
     else:
         all_sentences = read_lines(tokenized_lowercased_filename)
+
+    logging.info("Found {} sentences".format(len(all_sentences)))
 
     model = Word2Vec(
         sentences=all_sentences,
