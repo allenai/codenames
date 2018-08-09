@@ -1,5 +1,5 @@
 from collections import namedtuple
-from random import choice, shuffle
+from random import choices, shuffle
 from typing import List
 
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD
@@ -10,6 +10,7 @@ Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
 SCORE_CORRECT_GUESS = 1
 SCORE_INCORRECT_GUESS = -1
 SCORE_ASSASSIN_GUESS = -1
+SCORE_CIVILIAN_GUESS = 0
 
 class GameWrapper:
 
@@ -32,22 +33,27 @@ class GameWrapper:
         # initialize score.
         self.cumulative_score = 0
 
+        self.result = None
+
     def is_game_over(self):
         team1_has_words_left_to_guess, team2_has_words_left_to_guess = False, False
-        for i in range(self.engine.owner):
+        for i in range(len(self.engine.owner)):
             # if the assassin is revealed, then it's game over.
             if self.engine.owner[i] == ASSASSIN and not self.engine.assignment_not_revealed[i]:
+                self.result = "Assassin word guessed"
                 return True
             # does team1/2 has any invisible words?
             if self.engine.owner[i] == GOOD and self.engine.assignment_not_revealed[i]:
                 team1_has_words_left_to_guess = True
-            if self.engine.owner[i] == BAD and not self.engine.assignment_not_revealed[i]:
+            if self.engine.owner[i] == BAD and self.engine.assignment_not_revealed[i]:
                 team2_has_words_left_to_guess = True
 
         # if all words of either team are visible, it's game over.
         if not team1_has_words_left_to_guess:
+            self.result = "Team 1: Winner"
             return True
         if not team2_has_words_left_to_guess:
+            self.result = "Team 2: Winner"
             return True
 
         # if none of the above conditions apply, the game is not over.
@@ -57,7 +63,7 @@ class GameWrapper:
         return True
 
     def _apply_guess(self, guess):
-        idx = self.engine.board.indexof(guess)
+        idx = self.engine.board.tolist().index(guess)
         self.engine.assignment_not_revealed[idx] = False
 
         if idx == -1:
@@ -71,6 +77,8 @@ class GameWrapper:
                 turn_reward = SCORE_INCORRECT_GUESS
             elif self.engine.owner[idx] == ASSASSIN:
                 turn_reward = SCORE_ASSASSIN_GUESS
+            else:
+                turn_reward = SCORE_CIVILIAN_GUESS
 
             self.cumulative_score += turn_reward
             return turn_reward
@@ -93,8 +101,12 @@ class RandomGiver:
     def __init__(self, vocab=['I', 'have', 'no', 'clue', 'what', 'I', 'am', 'doing']):
         self.vocab = vocab
 
-    def get_next_clue(self, game_state, score, black_list):
-        return choice(self.vocab)
+    def get_next_clue(self, game_state, score, black_list=None):
+        options = choices(self.vocab, k=3)
+        clues = []
+        for option in options:
+            clues.append(Clue(clue_word=option, intended_board_words=[], count=1))
+        return clues
 
 
 class RandomGuesser:
@@ -107,10 +119,10 @@ class RandomGuesser:
 
     def guess(self, clue_word, count, game_state, cumulative_score):
         unrevealed_words = []
-        for i in range(game_state):
+        for i in range(len(game_state)):
             if game_state[i] == -1:
                 unrevealed_words.append(self.board_words[i])
-        return shuffle(unrevealed_words)[:count+1]
+        return choices(unrevealed_words, k=count+1)
 
     def report_reward(self, reward):
         pass
@@ -121,17 +133,22 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
     giver = RandomGiver()
     guesser = RandomGuesser(game.engine.board)
 
+    turn = 1
     while not game.is_game_over():
         # get a list of clues.
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
         # find the first legal clue.
-        while len(clue_objects) > 0:
-            if not game.is_valid_clue(clue_objects[0].clue_word):
-                del clue_objects[0]
-        if len(clue_objects) == 0:
+        first_valid_clue = None
+        for clue in clue_objects:
+            if game.is_valid_clue(clue_objects[0].clue_word):
+                first_valid_clue = clue
+
+        if first_valid_clue is None:
             raise RuntimeError('All clues given were illegal.')
-        clue_word, clue_count = clue_objects[0].clue_word, clue_objects[0].count
+
+        clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
-        turn_reward = game.apply_guesses(clue_objects[0], guessed_words)
+        turn_reward = game.apply_guesses(first_valid_clue, guessed_words)
         guesser.report_reward(turn_reward)
+        turn += 1
