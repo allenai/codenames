@@ -44,7 +44,7 @@ def main(args):
         window=7,
         workers=workers,
         negative=10,
-        min_count=10,
+        min_count=3,
         sg=1,
         iter=10
     )
