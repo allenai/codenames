@@ -35,15 +35,16 @@ def main(args):
         tokenized_lc_file.close()
     else:
         all_sentences = read_lines(tokenized_lowercased_filename)
+    logging.info('\n'.join(all_sentences[:10]))
 
     logging.info("Found {} sentences".format(len(all_sentences)))
 
     model = Word2Vec(
         sentences=all_sentences,
         size=300,
-        window=7,
+        window=5,
         workers=workers,
-        negative=10,
+        negative=5,
         min_count=2,
         sg=1,
         iter=10
