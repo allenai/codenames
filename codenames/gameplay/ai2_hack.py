@@ -1,8 +1,10 @@
-from collections import namedtuple
+import sys
+
 from random import choices, shuffle
 from typing import List
+from termcolor import colored
 
-from codenames.clue_givers.giver import Giver
+from codenames.clue_givers.giver import Giver, Clue
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD
@@ -86,6 +88,7 @@ class GameWrapper:
 
     # This method executes the guesses of team1.
     def apply_team1_guesses(self, clue: Clue, guessed_words: List[str]):
+
         guess_list_rewards = []
         if len(guessed_words) > int(clue.count) + 1:
             raise Exception
@@ -133,10 +136,9 @@ class RandomGiver(Giver):
   A clue giver who randomly picks the clue word from a vocabulary.
   '''
 
-    def __init__(self, board: List[str], target_IDs: List[str], embedding_handler: EmbeddingHandler,
+    def __init__(self, board: List[str], target_IDs: List[int],
                  vocab=None):
         super().__init__(board, target_IDs)
-        self.embedding_handler = embedding_handler
         if vocab is None:
             vocab = ['I', 'have', 'no', 'clue', 'what', 'I', 'am', 'doing']
         self.vocab = vocab
@@ -154,10 +156,9 @@ class RandomGuesser(Guesser):
   A guesser who randomly picks among unrevealed board words.
   '''
 
-    def __init__(self, board: List[str], embedding_handler: EmbeddingHandler):
+    def __init__(self, board: List[str]):
         super().__init__(board)
         self.board = board
-        self.embedding_handler = embedding_handler
 
     def guess(self, clue_word, count, game_state, cumulative_score):
         unrevealed_words = []
@@ -173,21 +174,22 @@ class RandomGuesser(Guesser):
 def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=None):
     print('||| initializing all modules.')
     game = GameWrapper(board_size, board_data)
-    giver = RandomGiver()
+    giver = RandomGiver(game.engine.board, game.engine.owner)
     guesser = RandomGuesser(game.engine.board)
 
     print('||| data: {}.'.format(list(zip(game.engine.board, game.engine.owner))))
 
     turn = 1
     while not game.is_game_over():
-        print('||| starting turn {}'.format(turn))
+        if turn == 1: 
+            game.engine.print_board(spymaster=True)
+        input('||| press ENTER to see the next clue for team1.')
+
         # get a list of clues.
-        print('||| calling giver.get_next_clue.')
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
         # find the first legal clue, then proceed.
         first_valid_clue = None
         for clue in clue_objects:
-            print('||| checking if clue = ({}, {}) is valid.'.format(clue.clue_word, clue.count))
             if game.is_valid_clue(clue_objects[0].clue_word):
                 first_valid_clue = clue
                 break
@@ -197,22 +199,36 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
-        print('||| calling guesser with the first valid clue: ({}, {}).'.format(clue.clue_word, clue.count))
+        sys.stdout.write("||| team1's clue: ({}, {}).\t".format(clue.clue_word, clue.count))
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
-        print('||| guesser said: {}'.format(guessed_words))
+        input(', press ENTER to see team1 guesses.')
+
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
-        print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))))
         guesser.report_reward(guess_list_rewards)
-        turn += 1
-        print('||| game is over? {}'.format(game.is_game_over()))
 
+        # print the board after team1 plays this turn.
+        game.engine.print_board(spymaster=True)
+        sys.stdout.write("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count))
+        print("||| team1's guess: {}".format(guessed_words))
+        sys.stdout.write('||| rewards: {}\t'.format(list(zip(guessed_words, guess_list_rewards))))
         if not game.is_game_over():
-            print('||| now, the imaginary team2 will "play".')
+            input(", press ENTER to see team2's next move.")
             team2_guessed_words = game.apply_team2_guesses()
-            print('||| team2 revealed that the following words belong to them: {}'.format(team2_guessed_words))
+            # print the board again after team2 plays this turn.
+            game.engine.print_board(spymaster=True)
+            sys.stdout.write("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count))
+            print("||| team1's guess: {}".format(guessed_words))
+            sys.stdout.write('||| rewards: {}\n'.format(list(zip(guessed_words, guess_list_rewards))))
+            sys.stdout.write("||| team2 revealed: {}\n".format(team2_guessed_words))
 
-    print('||| result: {}'.format(game.result))
-    print('||| score: {}'.format(game.cumulative_score))
+        turn += 1
+
+    # experitment with white background, and darker civilians.
+    # display the guesses that were actually played.
+    print('\n||| termination condition: {}'.format(game.result))
+    print('|||')
+    print('||| =============== GAME OVER =================')
+    print('||| =============== team1 score: {}'.format(game.cumulative_score))
 
 def main():
     play_game()

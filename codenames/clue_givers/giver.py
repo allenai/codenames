@@ -1,14 +1,7 @@
 from typing import List
 from collections import namedtuple
 from codenames.embedding_handler import EmbeddingHandler
-#from codenames.util import UNREVEALED, GOOD, BAD, CIVILIAN, ASSASIN
-#from codenames.gameplay.ai2_hack import Clue
-
 from codenames.utils.game_utils import Clue
-
-
-# from codenames.util import UNREVEALED, GOOD, BAD, CIVILIAN, ASSASIN
-#from codenames.gameplay.ai2_hack import Clue
 
 class Giver:
     """
