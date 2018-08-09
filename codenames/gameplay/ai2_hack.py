@@ -106,7 +106,8 @@ class RandomGiver(Giver):
 
     def __init__(self, board: List[str], target_IDs: List[str], embedding_handler: EmbeddingHandler,
                  vocab=None):
-        super().__init__(board, target_IDs, embedding_handler)
+        super().__init__(board, target_IDs)
+        self.embedding_handler = embedding_handler
         if vocab is None:
             vocab = ['I', 'have', 'no', 'clue', 'what', 'I', 'am', 'doing']
         self.vocab = vocab
@@ -125,8 +126,9 @@ class RandomGuesser(Guesser):
   '''
 
     def __init__(self, board: List[str], embedding_handler: EmbeddingHandler):
-        super().__init__(board, embedding_handler)
+        super().__init__(board)
         self.board = board
+        self.embedding_handler = embedding_handler
 
     def guess(self, clue_word, count, game_state, cumulative_score):
         unrevealed_words = []
