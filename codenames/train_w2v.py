@@ -35,7 +35,6 @@ def main(args):
         tokenized_lc_file.close()
     else:
         all_sentences = read_lines_tokens(tokenized_lowercased_filename)
-    logging.info('\n'.join(all_sentences[:10]))
 
     logging.info("Found {} sentences".format(len(all_sentences)))
 
