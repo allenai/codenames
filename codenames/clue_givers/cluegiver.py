@@ -1,31 +1,34 @@
-from overrides import overrides
+ from overrides import overrides
 from codenames.clue_givers.clue_giver import Giver
-
 from gensim.models import KeyedVectors
 from gensim.test.utils import datapath, get_tmpfile
 from itertools import combinations
 from collections import namedtuple
-
+from codenames.embedding_handler import EmbeddingHandler
+from codenames.gameplay.ai2_hack import Clue
 import numpy as np
 import sklearn.cluster
-
-import EmbeddingHandler as embed
-
+from codenames.utils.game_utils import get_available_choices
+import operator
+#import EmbeddingHandler as embed
 #model = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
-
 #Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
 
 class ClueGiver(Giver):
 
-    def __init__(self, board, target_words):
-        Giver.__init__(self, board, target_words):
+    def __init__(self, board: [str],
+                 target_words: [str],
+                 embeddinghandler: EmbeddingHandler):
+        #Giver.__init__(self, board, target_words):
 
-            self.pos_words = target_words
-            self.neg_words = [word in board for word not in target_words]
-            self.model = self.embedding_handler.embedding
+        self.pos_words = target_words
+        #TODO consider neutral words and assassin
+        self.neg_words = [word for word in board if word not in target_words]
+        self.model = embeddinghandler.embedding
 
-''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
-    def get_clues(self, group, self.neg_words, num_clues=NUM_CLUES): 
+    NUM_CLUES = 3
+    ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
+    def get_clues(self, group, neg_words, num_clues=NUM_CLUES):
         clues = []
         count = len(group)
         
@@ -56,17 +59,29 @@ class ClueGiver(Giver):
             clues.append((Clue(clue, group, count),np.mean(clue_cosine)))
         return clues
 
-'''List of Clues sorted by descending Cosine distance'''
-    def get_next_clue(self, game_state, score): #return list of clue objects in sorted list
+    '''List of Clues sorted by descending Cosine distance'''
+    def get_next_clue(self, game_state: [int],
+                      score: int): #return list of clue objects in sorted list
         all_clues = []
-        num_words = len(get_available_options(game_state))
+        num_words = len(get_available_choices(game_state))
         for count in range(num_words, 0, -1): #change num_words if we want to limit to max of X number of target words
             for group in combinations(range(num_words),count): 
-               all_clues.append(get_clues(group, self.neg_words)
-        all_clues = all_clues.sort(key=operator.itemgetter(1)
+               all_clues.append(self.get_clues(group, self.neg_words))
+        all_clues = all_clues.sort(key=operator.itemgetter(1))
         all_clues = [clue[0] for clue in all_clues]
         return all_clues
 
+
+def main():
+    test_embed = EmbeddingHandler("./test_embeds.p")
+    test_board = ["woman", "man", "girl", "boy"]
+    test_target = ["woman", "boy"]
+    cg = ClueGiver(test_board, test_target, test_embed)
+    cg.get_next_clue([1, 2, 2, 1])
+
+
+if __name__ == "__main__":
+    main()
 
 
 
