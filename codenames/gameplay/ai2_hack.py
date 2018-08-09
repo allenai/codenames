@@ -7,6 +7,8 @@ from codenames.clue_givers.heuristicgiver import HeuristicGiver
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 from codenames.guessers.heuristic_guesser import HeuristicGuesser
+from codenames.guessers.learned_guesser import LearnedGuesser
+from codenames.guessers.policy.similarity_threshold import SimilarityThresholdPolicy
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD, Clue
 from codenames.gameplay.engine import GameEngine
 import logging
@@ -178,7 +180,9 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
     embedding_handler = EmbeddingHandler('tests/fixtures/model.txt')
 
     giver = HeuristicGiver(game.engine.board, game.engine.owner, embedding_handler)
-    guesser = HeuristicGuesser(game.engine.board, embedding_handler)
+    guesser = LearnedGuesser(game.engine.board, embedding_handler,
+                             policy=SimilarityThresholdPolicy(300),
+                             learning_rate=0.01)
 
     logging.info('||| data: {}.'.format(list(zip(game.engine.board, game.engine.owner))))
 
