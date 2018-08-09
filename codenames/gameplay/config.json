@@ -1,7 +1,7 @@
 {
     "corpus_directory": "corpus",
-    "word_list":        "gameplay/words.txt",
-    "embedding":        "gameplay/word2vec.dat",
+    "word_list":        "codenames/gameplay/words.txt",
+    "embedding":        "codenames/gameplay/word2vec.dat",
     "encoding":         "utf8",
     "template": {
         "index":        "{0}.index",

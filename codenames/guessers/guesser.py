@@ -1,8 +1,5 @@
 from typing import List
 
-from codenames.embedding_handler import EmbeddingHandler
-from codenames.utils.game_utils import UNREVEALED
-
 
 class Guesser:
     """
@@ -35,3 +32,6 @@ class Guesser:
             Current score
         """
         raise NotImplementedError
+
+    def report_reward(self, rewards: List[int]) -> None:
+        pass

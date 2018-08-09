@@ -6,8 +6,6 @@ import spacy
 from gensim.models import Word2Vec
 import logging
 
-logging.getLogger().setLevel(logging.INFO)
-
 
 def main(args):
     corpus_location = args.corpus_location

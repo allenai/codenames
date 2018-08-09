@@ -5,15 +5,20 @@ from typing import List
 from termcolor import colored
 
 from codenames.clue_givers.giver import Giver, Clue
+from codenames.clue_givers.heuristicgiver import HeuristicGiver
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
-from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD
+from codenames.guessers.heuristic_guesser import HeuristicGuesser
+from codenames.guessers.learned_guesser import LearnedGuesser
+from codenames.guessers.policy.similarity_threshold import SimilarityThresholdPolicy
+from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD, Clue
 from codenames.gameplay.engine import GameEngine
+import logging
 
 SCORE_CORRECT_GUESS = 1
 SCORE_INCORRECT_GUESS = -1
-SCORE_ASSASSIN_GUESS = -1
-SCORE_CIVILIAN_GUESS = 0
+SCORE_ASSASSIN_GUESS = -5
+SCORE_CIVILIAN_GUESS = -1
 
 
 class GameWrapper:
@@ -102,12 +107,12 @@ class GameWrapper:
         # the engine pertaining to turn info.
         self.engine.next_turn()
 
-        return guess_list_rewards
+        return guess_list_rewards + [0] * (len(guessed_words) - len(guess_list_rewards))
 
     # The engine was designed for a 2-player experience. In the 1-player
     # version of the game, there is an imaginary team2 which is pretty
     # boring: it reveals one of the team2 cards in each turn. This method
-    # simulates the imaginary boring team2 for the 1-player version of the 
+    # simulates the imaginary boring team2 for the 1-player version of the
     # game.
     def apply_team2_guesses(self):
         team2_guess = None
@@ -130,6 +135,7 @@ class GameWrapper:
         self.engine.next_turn()
 
         return [team2_guess]
+
 
 class RandomGiver(Giver):
     '''
@@ -196,13 +202,14 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
 
         # get a list of clues.
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
+        assert len(clue_objects) > 0
         # find the first legal clue, then proceed.
         first_valid_clue = None
         for clue in clue_objects:
             if game.is_valid_clue(clue_objects[0].clue_word):
                 first_valid_clue = clue
                 break
-                
+
         if first_valid_clue is None:
             raise RuntimeError('All clues given were illegal.')
 
@@ -214,20 +221,6 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
 
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
         guesser.report_reward(guess_list_rewards)
-
-        # print the board after team1 plays this turn.
-        game.engine.print_board(spymaster=True, verbose=verbose)
-        _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
-        _print("||| team1's guesses: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
-        if not game.is_game_over():
-            _input(", press ENTER to see team2's next move.", verbose=verbose)
-            team2_guessed_words = game.apply_team2_guesses()
-            # print the board again after team2 plays this turn.
-            game.engine.print_board(spymaster=True, verbose=verbose)
-            _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
-            _print("||| team1's guess: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
-            _print("||| team2 revealed: {}\n".format(team2_guessed_words), verbose=verbose)
-
         turn += 1
 
     _print('\n||| termination condition: {}\n'.format(game.result), verbose=verbose)
@@ -238,5 +231,6 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
 def main():
     play_game(verbose=True)
   
+
 if __name__== "__main__":
     main()
