@@ -8,8 +8,8 @@ import platform
 
 import numpy as np
 
-from gameplay.model import WordEmbedding
-from gameplay.config import config
+from codenames.gameplay.model import WordEmbedding
+from codenames.gameplay.config import config
 
 CLUE_PATTERN = r'^([a-zA-Z]+) ({0})$'
 UNLIMITED = "unlimited"
