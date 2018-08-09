@@ -1,6 +1,6 @@
 import torch
 
-class Policy:
+class GuesserPolicy:
     def __init__(self):
         raise NotImplementedError
 

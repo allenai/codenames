@@ -14,4 +14,5 @@ class TestLearnedGuesser(TestCase):
         guesser = LearnedGuesser(sample_board, embedding_handler, policy, 0.1)
         sample_state = [0, -1, -1, -1]
         guesses = guesser.guess("boy", 1, sample_state, 0)
-        assert guesses == ['girl', 'woman']  # count + 1
+        guesser.report_reward([10])
+        print(guesses)
