@@ -117,7 +117,9 @@ class GameEngine(object):
         self.assassin_word = self.board[self.owner == 0]
         self.num_turns = -1
 
-    def print_board(self, spymaster=False, clear_screen=True):
+    def print_board(self, spymaster=False, clear_screen=True, verbose=True):
+        if not verbose:
+            return
         if clear_screen:
             if platform.system() == 'Windows':
                 os.system('cls')
@@ -125,13 +127,13 @@ class GameEngine(object):
                 sys.stdout.write(chr(27) + '[2J')
 
         sys.stdout.write('Legend:\n')
-        sys.stdout.write('  ' + colored('unrevealed TEAM1 card    ', 'blue', 'on_white'))
+        sys.stdout.write('  ' + colored('unrevealed TEAM1 card    ', 'blue'))
         sys.stdout.write('  ' + colored('  revealed TEAM1 card    ', 'white', 'on_blue') + '\n') 
-        sys.stdout.write('  ' + colored('unrevealed TEAM2 card    ', 'red', 'on_white'))
+        sys.stdout.write('  ' + colored('unrevealed TEAM2 card    ', 'red'))
         sys.stdout.write('  ' + colored('  revealed TEAM2 card    ', 'white', 'on_red') + '\n') 
-        sys.stdout.write('  ' + colored('unrevealed NEUTRAL card  ', 'yellow', 'on_white'))
-        sys.stdout.write('  ' + colored('  revealed NEUTRAL card  ', 'white', 'on_yellow') + '\n') 
-        sys.stdout.write('  ' + colored('unrevealed ASSASSIN card ', 'grey', 'on_white'))
+        sys.stdout.write('  ' + colored('unrevealed NEUTRAL card  ', 'green'))
+        sys.stdout.write('  ' + colored('  revealed NEUTRAL card  ', 'white', 'on_green') + '\n') 
+        sys.stdout.write('  ' + colored('unrevealed ASSASSIN card ', 'grey'))
         sys.stdout.write('  ' + colored('  revealed ASSASSIN card ', 'white', 'on_grey') + '\n\n') 
         sys.stdout.write('Board:\n')
         board = self.board.reshape(self.size, self.size)
@@ -154,11 +156,11 @@ class GameEngine(object):
                     elif owner[row, col] == 2:
                         background_color = 'on_red'
                     elif owner[row, col] == 3:
-                        background_color = 'on_yellow'
+                        background_color = 'on_green'
                     else:
                         raise RuntimeError('invalid owner.')
                 else:
-                    background_color = 'on_white'
+                    background_color = None
                     if owner[row, col] == 0:
                         foreground_color = 'grey'
                         attrs.append('bold')
@@ -167,7 +169,7 @@ class GameEngine(object):
                     elif owner[row, col] == 2:
                         foreground_color = 'red'
                     elif owner[row, col] == 3:
-                        foreground_color = 'yellow'
+                        foreground_color = 'green'
                     else:
                         raise RuntimeError('invalid owner.')
                 if not spymaster or owner[row, col] in (0, 1, 2):
@@ -175,7 +177,10 @@ class GameEngine(object):
 
                 # format cell content
                 cell = '{:^11} '.format(word.decode('utf8'))
-                cell = colored(cell, foreground_color, background_color, attrs = attrs)
+                if background_color:
+                    cell = colored(cell, foreground_color, background_color, attrs = attrs)
+                else:
+                    cell = colored(cell, foreground_color, attrs = attrs)
                 sys.stdout.write(cell)
             sys.stdout.write('\n')
         sys.stdout.write('\n')

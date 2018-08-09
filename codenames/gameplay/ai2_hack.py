@@ -170,20 +170,29 @@ class RandomGuesser(Guesser):
     def report_reward(self, reward):
         pass
 
+def _print(message, verbose):
+    if verbose:
+        sys.stdout.write(message)
 
-def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=None):
-    print('||| initializing all modules.')
+def _input(message, verbose):
+    if verbose:
+        return input(message)
+    else:
+        return ''
+
+def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=None, verbose=True):
+    _print('||| initializing all modules.\n', verbose=verbose)
     game = GameWrapper(board_size, board_data)
     giver = RandomGiver(game.engine.board, game.engine.owner)
     guesser = RandomGuesser(game.engine.board)
 
-    print('||| data: {}.'.format(list(zip(game.engine.board, game.engine.owner))))
+    _print('||| data: {}.\n'.format(list(zip(game.engine.board, game.engine.owner))), verbose=verbose)
 
     turn = 1
     while not game.is_game_over():
         if turn == 1: 
-            game.engine.print_board(spymaster=True)
-        input('||| press ENTER to see the next clue for team1.')
+            game.engine.print_board(spymaster=True, verbose=verbose)
+        _input('||| press ENTER to see the next clue for team1.', verbose=verbose)
 
         # get a list of clues.
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
@@ -199,39 +208,35 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
-        sys.stdout.write("||| team1's clue: ({}, {}).\t".format(clue.clue_word, clue.count))
+        _print("||| team1's clue: ({}, {}).\t".format(clue.clue_word, clue.count), verbose=verbose)
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
-        input(', press ENTER to see team1 guesses.')
+        _print(', press ENTER to see team1 guesses.\n', verbose=verbose)
 
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
         guesser.report_reward(guess_list_rewards)
 
         # print the board after team1 plays this turn.
-        game.engine.print_board(spymaster=True)
-        sys.stdout.write("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count))
-        print("||| team1's guess: {}".format(guessed_words))
-        sys.stdout.write('||| rewards: {}\t'.format(list(zip(guessed_words, guess_list_rewards))))
+        game.engine.print_board(spymaster=True, verbose=verbose)
+        _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
+        _print("||| team1's guesses: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
         if not game.is_game_over():
-            input(", press ENTER to see team2's next move.")
+            _input(", press ENTER to see team2's next move.", verbose=verbose)
             team2_guessed_words = game.apply_team2_guesses()
             # print the board again after team2 plays this turn.
-            game.engine.print_board(spymaster=True)
-            sys.stdout.write("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count))
-            print("||| team1's guess: {}".format(guessed_words))
-            sys.stdout.write('||| rewards: {}\n'.format(list(zip(guessed_words, guess_list_rewards))))
-            sys.stdout.write("||| team2 revealed: {}\n".format(team2_guessed_words))
+            game.engine.print_board(spymaster=True, verbose=verbose)
+            _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
+            _print("||| team1's guess: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
+            _print("||| team2 revealed: {}\n".format(team2_guessed_words), verbose=verbose)
 
         turn += 1
 
-    # experitment with white background, and darker civilians.
-    # display the guesses that were actually played.
-    print('\n||| termination condition: {}'.format(game.result))
-    print('|||')
-    print('||| =============== GAME OVER =================')
-    print('||| =============== team1 score: {}'.format(game.cumulative_score))
+    _print('\n||| termination condition: {}\n'.format(game.result), verbose=verbose)
+    _print('|||\n', verbose=verbose)
+    _print('||| =============== GAME OVER =================', verbose=verbose)
+    _print('||| =============== team1 score: {}\n'.format(game.cumulative_score), verbose=verbose)
 
 def main():
-    play_game()
+    play_game(verbose=True)
   
 if __name__== "__main__":
     main()
