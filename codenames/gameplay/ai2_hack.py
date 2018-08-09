@@ -66,7 +66,7 @@ class GameWrapper:
     def is_valid_clue(self, clue_word: str):
         return True
 
-    def _apply_guess(self, guess):
+    def _apply_team1_guess(self, guess):
         idx = self.engine.board.tolist().index(guess)
         self.engine.assignment_not_revealed[idx] = False
 
@@ -86,18 +86,49 @@ class GameWrapper:
             self.cumulative_score += guess_reward
             return guess_reward
 
-    def apply_guesses(self, clue: Clue, guessed_words: List[str]):
+    # This method executes the guesses of team1.
+    def apply_team1_guesses(self, clue: Clue, guessed_words: List[str]):
         guess_list_rewards = []
         if len(guessed_words) > int(clue.count) + 1:
             raise Exception
         for word in guessed_words:
-            guess_reward = self._apply_guess(word)
+            guess_reward = self._apply_team1_guess(word)
             guess_list_rewards.append(guess_reward)
             if guess_reward <= 0:
                 break
 
+        # team1 just played, so we need to update the internal state of
+        # the engine pertaining to turn info.
+        self.engine.next_turn()
+
         return guess_list_rewards
 
+    # The engine was designed for a 2-player experience. In the 1-player
+    # version of the game, there is an imaginary team2 which is pretty
+    # boring: it reveals one of the team2 cards in each turn. This method
+    # simulates the imaginary boring team2 for the 1-player version of the 
+    # game.
+    def apply_team2_guesses(self):
+        team2_guess = None
+        for i in range(len(self.engine.board)):
+            # find the first word which belongs to team2 and is not revealed.
+            if self.engine.owner[i] == BAD and self.engine.assignment_not_revealed[i]:
+                # then reveal it.
+                self.game_state[i] = self.engine.owner[i]
+                self.engine.assignment_not_revealed[i] = False
+                team2_guess = self.engine.board[i]
+                break
+
+        # This should never happen.
+        if not team2_guess:
+            raise RuntimeError('All cards which belong to TEAM2 have already'
+                               'been revealed, why are we still playing?')
+
+        # team2 just played, so we need to update the internal state of
+        # the engine pertaining to turn info.
+        self.engine.next_turn()
+
+        return [team2_guess]
 
 class RandomGiver(Giver):
     '''
@@ -171,11 +202,16 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
         print('||| calling guesser with the first valid clue: ({}, {}).'.format(clue.clue_word, clue.count))
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
         print('||| guesser said: {}'.format(guessed_words))
-        guess_list_rewards = game.apply_guesses(first_valid_clue, guessed_words)
+        guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
         print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))))
         guesser.report_reward(guess_list_rewards)
         turn += 1
         print('||| game is over? {}'.format(game.is_game_over()))
+
+        if not game.is_game_over():
+            print('||| now, the imaginary team2 will "play".')
+            team2_guessed_words = game.apply_team2_guesses()
+            print('||| team2 revealed that the following words belong to them: {}'.format(team2_guessed_words))
 
     print('||| result: {}'.format(game.result))
     print('||| score: {}'.format(game.cumulative_score))
