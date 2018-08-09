@@ -15,6 +15,7 @@ ASSASSIN = 0
 
 Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
 
+DEFAULT_NUM_CLUES = 5
 
 def get_available_choices(board: List[str],
                           game_state: List[int]) -> List[str]:

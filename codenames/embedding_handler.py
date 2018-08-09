@@ -22,7 +22,7 @@ class EmbeddingHandler:
                 if len(fields) == 2:
                     # This must be the first line with metadata.
                     continue
-                word = fields[0]
+                word = fields[0].lower()
                 vector = numpy.asarray([float(x) for x in fields[1:]])
                 self.embedding[word] = vector
 

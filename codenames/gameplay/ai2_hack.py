@@ -175,7 +175,7 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
     logging.info('||| initializing all modules.')
     game = GameWrapper(board_size, board_data)
     giver = RandomGiver(game.engine.board, [])
-    guesser = HeuristicGuesser(game.engine.board, EmbeddingHandler("tests/fixtures/weights.txt"))
+    guesser = HeuristicGuesser(game.engine.board, EmbeddingHandler("tests/fixtures/model.txt"))
 
     logging.info('||| data: {}.'.format(list(zip(game.engine.board, game.engine.owner))))
 
