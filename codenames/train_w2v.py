@@ -4,6 +4,9 @@ import os
 from codenames.utils.file_utils import read_lines
 import spacy
 from gensim.models import Word2Vec
+import logging
+
+logging.getLogger().setLevel(logging.INFO)
 
 
 def main(args):
@@ -16,10 +19,10 @@ def main(args):
 
     tokenized_lowercased_filename = os.path.join(os.path.dirname(corpus_location),
                                              os.path.basename(corpus_location) + "-tokenized_lc.txt")
-    print("Writing to file: " + tokenized_lowercased_filename)
 
     all_sentences = []
     if not os.path.exists(tokenized_lowercased_filename):
+        logging.info("Writing to file: " + tokenized_lowercased_filename)
         nlp = spacy.load("en")
         with open(tokenized_lowercased_filename, "w") as tokenized_lc_file:
             for line in read_lines(corpus_location):
@@ -32,6 +35,8 @@ def main(args):
         tokenized_lc_file.close()
     else:
         all_sentences = read_lines(tokenized_lowercased_filename)
+
+    logging.info("Found {} sentences".format(len(all_sentences)))
 
     model = Word2Vec(
         sentences=all_sentences,
