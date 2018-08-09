@@ -5,7 +5,7 @@ import torch
 from torch.distributions import Categorical
 
 from codenames.guessers.guesser import Guesser
-from codenames.guessers.policies.guesser_policy import GuesserPolicy
+from codenames.guessers.policy.policy import Policy
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.utils import game_utils as util
 
@@ -14,7 +14,7 @@ class LearnedGuesser(Guesser):
     def __init__(self,
                  board: List[str],
                  embedding_handler: EmbeddingHandler,
-                 policy: GuesserPolicy,
+                 policy: Policy,
                  learning_rate: float) -> None:
         super(LearnedGuesser, self).__init__(board, embedding_handler)
         self.policy = policy
@@ -30,7 +30,7 @@ class LearnedGuesser(Guesser):
               current_score: int) -> List[str]:
         # Get vectors for clues and options
         clue_vector = self.embedding_handler.get_word_vector(clue)
-        if not clue_vector:
+        if clue_vector is None:
             return []
         option_vectors = []
         known_options = []
@@ -45,6 +45,7 @@ class LearnedGuesser(Guesser):
         # Sample from policy
         policy_output = self.policy(torch.Tensor(clue_vector),
                                     torch.Tensor(option_vectors))
+        print(policy_output)
         distribution = Categorical(policy_output)
         predictions = distribution.sample(torch.Size((count,)))
 
