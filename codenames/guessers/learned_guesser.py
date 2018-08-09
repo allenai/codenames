@@ -8,7 +8,7 @@ from codenames.guessers.guesser import Guesser
 from codenames.guessers.policy.guesser_policy import GuesserPolicy
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.utils import game_utils as util
-
+from codenames.guessers.policy.similarity_threshold_game_state import SimilarityThresholdGameStatePolicy
 
 class LearnedGuesser(Guesser):
     def __init__(self,
@@ -42,9 +42,22 @@ class LearnedGuesser(Guesser):
         if not option_vectors:
             return []
 
-        # Sample from policy
-        policy_output = self.policy(torch.Tensor(clue_vector),
-                                    torch.Tensor(option_vectors))
+
+        # Checks type of policy to see if we should parameterize
+        if type(self.policy) == SimilarityThresholdGameStatePolicy:
+            # Parameterizes game state for policy
+            parameterized_game_state = []
+            for i in range(4):
+                parameterized_game_state.append(game_state.count(i))
+            # Sample from policy
+            policy_output = self.policy(torch.Tensor(clue_vector),
+                                        torch.Tensor(option_vectors),
+                                        torch.Tensor(parameterized_game_state))
+        else:
+            # Sample from policy
+            policy_output = self.policy(torch.Tensor(clue_vector),
+                                        torch.Tensor(option_vectors))
+
         distribution = Categorical(policy_output)
         predictions = distribution.sample(torch.Size((count,)))
 
