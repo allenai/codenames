@@ -15,4 +15,4 @@ class TestLearnedGuesser(TestCase):
         sample_state = [0, -1, -1, -1]
         guesses = guesser.guess("boy", 1, sample_state, 0)
         guesser.report_reward([10])
-        print(guesses)
+        assert guesses == ['girl']

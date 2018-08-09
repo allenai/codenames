@@ -15,7 +15,9 @@ class SimilarityThresholdGameStatePolicy(GuesserPolicy, nn.Module):
 
         self.embed_size = embed_size
         #Similarity matrix
-        self.W = nn.Parameter(torch.rand(self.embed_size, self.embed_size), requires_grad = True)
+        w = torch.empty(self.embed_size, self.embed_size)
+        nn.init.eye_(w)
+        self.W = nn.Parameter(w, requires_grad=True)
 
         #Similarity threshold, decided by W_t, which is matmul with the game state
         #size 4 x 1 because there are 4 game parameters and 1 threshold param to output.
