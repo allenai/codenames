@@ -10,6 +10,8 @@ numpy
 scipy
 scikit-learn
 gensim
+torch
+torchvision
 
 # natural language processing
 spacy
@@ -18,4 +20,3 @@ nltk
 
 wikipedia
 pywikibot
-nltk

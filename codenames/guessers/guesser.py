@@ -1,7 +1,7 @@
 from typing import List
 
 from codenames.embedding_handler import EmbeddingHandler
-from codenames.util import UNREVEALED
+from codenames.utils.game_utils import UNREVEALED
 
 
 class Guesser:
