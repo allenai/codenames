@@ -3,7 +3,12 @@ from collections import namedtuple
 from codenames.embedding_handler import EmbeddingHandler
 #from codenames.util import UNREVEALED, GOOD, BAD, CIVILIAN, ASSASIN
 #from codenames.gameplay.ai2_hack import Clue
-Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
+
+
+# from codenames.util import UNREVEALED, GOOD, BAD, CIVILIAN, ASSASIN
+from codenames.gameplay.ai2_hack import Clue
+
+
 class Giver:
     """
     Parameters
@@ -15,6 +20,7 @@ class Giver:
     embedding_file : `str`
         Location of pickled embeddings
     """
+
     def __init__(self,
                  board: List[str],
                  allIDs: List[int],
@@ -22,7 +28,7 @@ class Giver:
         self.board = board
         self.allIDs = allIDs
         self.embedding_handler = embedding_handler
-   
+
     def get_next_clue(self,
                       game_state: List[int],
                       current_score: int) -> List[Clue]:

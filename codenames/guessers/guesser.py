@@ -1,7 +1,7 @@
 from typing import List
 
 from codenames.embedding_handler import EmbeddingHandler
-from codenames.util import UNREVEALED
+from codenames.utils.game_utils import UNREVEALED
 
 
 class Guesser:
@@ -14,10 +14,8 @@ class Guesser:
         Location of pickled embeddings
     """
     def __init__(self,
-                 board: List[str],
-                 embedding_handler: EmbeddingHandler) -> None:
+                 board: List[str]) -> None:
         self.board = board
-        self.embedding_handler = embedding_handler
 
     def guess(self,
               clue: str,
