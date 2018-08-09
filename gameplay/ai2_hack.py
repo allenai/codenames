@@ -12,6 +12,7 @@ SCORE_INCORRECT_GUESS = -1
 SCORE_ASSASSIN_GUESS = -1
 SCORE_CIVILIAN_GUESS = 0
 
+
 class GameWrapper:
 
     def __init__(self, board_size, board_data=None):
@@ -69,28 +70,30 @@ class GameWrapper:
         if idx == -1:
             raise Exception
         else:
-            turn_reward = None
             self.game_state[idx] = self.engine.owner[idx]
             if self.engine.owner[idx] == GOOD:
-                turn_reward = SCORE_CORRECT_GUESS
+                guess_reward = SCORE_CORRECT_GUESS
             elif self.engine.owner[idx] == BAD:
-                turn_reward = SCORE_INCORRECT_GUESS
+                guess_reward = SCORE_INCORRECT_GUESS
             elif self.engine.owner[idx] == ASSASSIN:
-                turn_reward = SCORE_ASSASSIN_GUESS
+                guess_reward = SCORE_ASSASSIN_GUESS
             else:
-                turn_reward = SCORE_CIVILIAN_GUESS
+                guess_reward = SCORE_CIVILIAN_GUESS
 
-            self.cumulative_score += turn_reward
-            return turn_reward
+            self.cumulative_score += guess_reward
+            return guess_reward
 
     def apply_guesses(self, clue: Clue, guessed_words: List[str]):
-        turn_reward = 0
+        guess_list_rewards = []
         if len(guessed_words) > int(clue.count) + 1:
             raise Exception
         for word in guessed_words:
-            turn_reward += self._apply_guess(word)
+            guess_reward = self._apply_guess(word)
+            guess_list_rewards.append(guess_reward)
+            if guess_reward < 0:
+                break
 
-        return turn_reward
+        return guess_list_rewards
 
 
 class RandomGiver:
@@ -122,7 +125,7 @@ class RandomGuesser:
         for i in range(len(game_state)):
             if game_state[i] == -1:
                 unrevealed_words.append(self.board_words[i])
-        return choices(unrevealed_words, k=count+1)
+        return choices(unrevealed_words, k=count + 1)
 
     def report_reward(self, reward):
         pass
@@ -149,6 +152,6 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
-        turn_reward = game.apply_guesses(first_valid_clue, guessed_words)
-        guesser.report_reward(turn_reward)
+        guess_list_rewards = game.apply_guesses(first_valid_clue, guessed_words)
+        guesser.report_reward(guess_list_rewards)
         turn += 1
