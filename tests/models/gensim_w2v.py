@@ -5,13 +5,13 @@ from codenames.utils.file_utils import read_lines
 from random import choices
 import random
 
-words = read_lines("gameplay/words.txt")
+words = [w.replace(" ", "_") for w in read_lines("codenames/gameplay/words.txt")]
 
 all_sentences = []
 for i in range(10000):
     num_words = random.randint(4, 10)
     all_sentences.append(
-        ' '.join(choices(words, k=num_words))
+        choices(words, k=num_words)
     )
 
 model = Word2Vec(
