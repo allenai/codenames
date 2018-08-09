@@ -7,7 +7,7 @@ from codenames.guessers.policy.similarity_threshold import SimilarityThresholdPo
 
 class TestLearnedGuesser(TestCase):
     def test_guess(self):
-        embedding_handler = EmbeddingHandler("tests/fixtures/sample_embedding.pkl")
+        embedding_handler = EmbeddingHandler("tests/fixtures/sample_embedding.txt")
         sample_board = ["boy", "girl", "woman", "man"]
         embed_size = list(embedding_handler.embedding.values())[0].shape[0]
         policy = SimilarityThresholdPolicy(embed_size)

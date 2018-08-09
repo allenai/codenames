@@ -6,7 +6,7 @@ from codenames.embedding_handler import EmbeddingHandler
 
 class TestHeuristicGuesser(TestCase):
     def test_guess(self):
-        embedding_handler = EmbeddingHandler("tests/fixtures/sample_embedding.pkl")
+        embedding_handler = EmbeddingHandler("tests/fixtures/sample_embedding.txt")
         sample_board = ["boy", "girl", "woman", "man"]
         guesser = HeuristicGuesser(sample_board, embedding_handler)
         sample_state = [0, -1, -1, -1]

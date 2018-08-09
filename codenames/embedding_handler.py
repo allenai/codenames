@@ -11,11 +11,20 @@ class EmbeddingHandler:
     Parameters
     ----------
     embedding_file : `str`
-        Location of pickled embeddings
+        Location of a text file containing embeddings in word2vec format.
     """
     def __init__(self, embedding_file: str) -> None:
         # str -> numpy array
-        self.embedding = pickle.load(open(embedding_file, "rb"))
+        self.embedding = {}
+        with open(embedding_file) as input_file:
+            for line in input_file:
+                fields = line.strip().split()
+                if len(fields) == 2:
+                    # This must be the first line with metadata.
+                    continue
+                word = fields[0]
+                vector = numpy.asarray([float(x) for x in fields[1:]])
+                self.embedding[word] = vector
 
     def get_word_vector(self, word: str) -> numpy.ndarray:
         word = word.lower()
