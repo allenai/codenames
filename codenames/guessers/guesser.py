@@ -15,7 +15,7 @@ class Guesser:
     """
     def __init__(self,
                  board: List[str],
-                 embedding_handler: EmbeddingHandler) -> None:
+                 embedding_handler: EmbeddingHandler=None) -> None:
         self.board = board
         self.embedding_handler = embedding_handler
 

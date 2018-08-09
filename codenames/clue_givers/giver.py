@@ -1,7 +1,11 @@
 from typing import List
 
 from codenames.embedding_handler import EmbeddingHandler
-#from codenames.util import UNREVEALED, GOOD, BAD, CIVILIAN, ASSASIN
+
+
+# from codenames.util import UNREVEALED, GOOD, BAD, CIVILIAN, ASSASIN
+from codenames.gameplay.ai2_hack import Clue
+
 
 class Giver:
     """
@@ -14,13 +18,14 @@ class Giver:
     embedding_file : `str`
         Location of pickled embeddings
     """
+
     def __init__(self,
                  board: List[str],
                  target_IDs: List[str],
                  embedding_handler: EmbeddingHandler) -> None:
         self.board = board
         self.embedding_handler = embedding_handler
-   
+
     def get_next_clue(self,
                       game_state: List[int],
                       current_score: int) -> List[Clue]:

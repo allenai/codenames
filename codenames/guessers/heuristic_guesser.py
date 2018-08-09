@@ -6,8 +6,12 @@ from codenames.guessers.guesser import Guesser
 import codenames.utils.game_utils as util
 
 
-
 class HeuristicGuesser(Guesser):
+
+    def __init__(self, board: List[str]):
+        super().__init__(board)
+        self.embedding_handler = embedding_handler
+
     @overrides
     def guess(self,
               clue: str,
