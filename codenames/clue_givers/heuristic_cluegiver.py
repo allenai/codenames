@@ -16,7 +16,7 @@ import logging
 #model = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
 #Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
 
-class ClueGiver(Giver):
+class HeuristicClueGiver(Giver):
 
     def __init__(self, board: [str],
                  allIDs: List[int],
@@ -92,7 +92,7 @@ def main():
     test_board = ["woman", "man", "girl", "boy", "blue", "cat", "queen", "king"]
     test_allIDs = [1, 2, 2, 1, -1, 1, 2, 3]
     test_target = ["woman", "boy"]
-    cg = ClueGiver(test_board, test_allIDs, test_embed)
+    cg = HeuristicClueGiver(test_board, test_allIDs, test_embed)
     logging.info('cllllue')
     logging.info(cg.get_next_clue([-1, 2, 2, 1, -1, 1, 2, 3], 3))
 
