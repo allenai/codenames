@@ -35,7 +35,9 @@ class Dataset():
     in between consecutive games. Optional to pass in number of assassins, positive, and negative words.
     By default, the number of neutral cards is determined by size-num_assassin-num_pos-num_neg.
     
-    guesser/clue_givers are used to determine blacklists.
+    If you want vocabulary to be restricted to words found in an EmbeddingHandler's embedding, 
+    guesser/clue_givers parameters are used to create blacklists of words to exclude from the sampling
+    process.
     
     Note that the return is of the format:
         ASSASSIN;TEAM1;TEAM2;NEUTRAL
@@ -71,7 +73,9 @@ class Dataset():
        Optional to pass in number of assassins, positive, and negative words.
        By default, the number of neutral cards is determined by size-num_assassin-num_pos-num_neg.
        
-       guesser/clue_givers are used to determine blacklists.
+       If you want vocabulary to be restricted to words found in an EmbeddingHandler's embedding, 
+        guesser/clue_givers parameters are used to create blacklists of words to exclude from the sampling
+        process.
 
        Note that the return is of the format:
            ASSASSIN;TEAM1;TEAM2;NEUTRAL
@@ -128,7 +132,9 @@ class Dataset():
     
     similarity: EmbeddingHandler is the embedding space we will use to calculate similarity.
     
-    guesser/clue_givers are used to determine blacklists.
+    If you want vocabulary to be restricted to words found in an EmbeddingHandler's embedding, 
+    guesser/clue_givers parameters are used to create blacklists of words to exclude from the sampling
+    process.
     
     In the default case: It selects a random word in the dataset as a "seed" word and 
     adds similar words (with cos distance less than Epsilon).  If not enough words are chosen, another 
