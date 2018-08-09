@@ -14,10 +14,8 @@ class Guesser:
         Location of pickled embeddings
     """
     def __init__(self,
-                 board: List[str],
-                 embedding_handler: EmbeddingHandler) -> None:
+                 board: List[str]) -> None:
         self.board = board
-        self.embedding_handler = embedding_handler
 
     def guess(self,
               clue: str,

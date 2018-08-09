@@ -2,12 +2,17 @@ from typing import List
 
 from overrides import overrides
 
+from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 import codenames.utils.game_utils as util
 
 
-
 class HeuristicGuesser(Guesser):
+
+    def __init__(self, board: List[str], embedding_handler: EmbeddingHandler):
+        super().__init__(board)
+        self.embedding_handler = embedding_handler
+
     @overrides
     def guess(self,
               clue: str,

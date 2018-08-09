@@ -16,10 +16,11 @@ class LearnedGuesser(Guesser):
                  embedding_handler: EmbeddingHandler,
                  policy: GuesserPolicy,
                  learning_rate: float) -> None:
-        super(LearnedGuesser, self).__init__(board, embedding_handler)
+        super(LearnedGuesser, self).__init__(board)
         self.policy = policy
         self.guess_history = None
         self.guess_log_probs = None
+        self.embedding_handler = embedding_handler
         self.optimizer = torch.optim.Adam(policy.parameters(), lr=learning_rate)
 
     @overrides

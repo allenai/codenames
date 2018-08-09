@@ -1,5 +1,6 @@
 import torch
 
+
 class GuesserPolicy:
     def __init__(self):
         raise NotImplementedError
@@ -9,5 +10,6 @@ class GuesserPolicy:
     
     Inputs should be specified by child instantiations.`
     '''
-    def forward(self)-> torch.Tensor:
+
+    def forward(self) -> torch.Tensor:
         raise NotImplementedError

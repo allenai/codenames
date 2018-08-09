@@ -2,6 +2,9 @@ from collections import namedtuple
 from random import choices, shuffle
 from typing import List
 
+from codenames.clue_givers.giver import Giver
+from codenames.embedding_handler import EmbeddingHandler
+from codenames.guessers.guesser import Guesser
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD
 from codenames.gameplay.engine import GameEngine
 
@@ -96,12 +99,17 @@ class GameWrapper:
         return guess_list_rewards
 
 
-class RandomGiver:
+class RandomGiver(Giver):
     '''
   A clue giver who randomly picks the clue word from a vocabulary.
   '''
 
-    def __init__(self, vocab=['I', 'have', 'no', 'clue', 'what', 'I', 'am', 'doing']):
+    def __init__(self, board: List[str], target_IDs: List[str], embedding_handler: EmbeddingHandler,
+                 vocab=None):
+        super().__init__(board, target_IDs)
+        self.embedding_handler = embedding_handler
+        if vocab is None:
+            vocab = ['I', 'have', 'no', 'clue', 'what', 'I', 'am', 'doing']
         self.vocab = vocab
 
     def get_next_clue(self, game_state, score, black_list=None):
@@ -112,19 +120,21 @@ class RandomGiver:
         return clues
 
 
-class RandomGuesser:
+class RandomGuesser(Guesser):
     '''
   A guesser who randomly picks among unrevealed board words.
   '''
 
-    def __init__(self, board_words):
-        self.board_words = board_words
+    def __init__(self, board: List[str], embedding_handler: EmbeddingHandler):
+        super().__init__(board)
+        self.board = board
+        self.embedding_handler = embedding_handler
 
     def guess(self, clue_word, count, game_state, cumulative_score):
         unrevealed_words = []
         for i in range(len(game_state)):
             if game_state[i] == -1:
-                unrevealed_words.append(self.board_words[i])
+                unrevealed_words.append(self.board[i])
         return choices(unrevealed_words, k=count + 1)
 
     def report_reward(self, reward):
