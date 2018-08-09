@@ -1,14 +1,14 @@
 from overrides import overrides
-from codenames.clue_givers.giver import Giver
+#from codenames.clue_givers.giver import Giver
 from gensim.models import KeyedVectors
 from gensim.test.utils import datapath, get_tmpfile
 from itertools import combinations, chain
 from collections import namedtuple
 from codenames.embedding_handler import EmbeddingHandler
-from codenames.gameplay.ai2_hack import Clue
+from codenames.clue_givers.giver import Giver
 import numpy as np
 import sklearn.cluster
-from codenames.utils.game_utils import get_available_choices
+from codenames.utils.game_utils import get_available_choices, Clue
 import operator
 #import EmbeddingHandler as embed
 #model = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
@@ -19,7 +19,8 @@ class ClueGiver(Giver):
     def __init__(self, board: [str],
                  allIDs: [int],
                  embeddinghandler: EmbeddingHandler):
-        self.board = board
+        #self.board = board
+        super().__init__(board, allIDs)
         self.pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
         #TODO consider neutral words and assassin
         self.neg_words = [word for word in board if word not in self.pos_words]
@@ -85,6 +86,7 @@ class ClueGiver(Giver):
 def main():
     #test_embed = EmbeddingHandler("./test_embeds.p")
     test_embed = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
+    #import pdb; pdb.set_trace()
     test_board = ["woman", "man", "girl", "boy", "blue", "cat", "queen", "king"]
     test_allIDs = [1, 2, 2, 1, -1, 1, 2, 3]
     test_target = ["woman", "boy"]
@@ -95,7 +97,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-            
