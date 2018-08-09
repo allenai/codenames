@@ -1,8 +1,9 @@
 from typing import List
-
+from collections import namedtuple
 from codenames.embedding_handler import EmbeddingHandler
 #from codenames.util import UNREVEALED, GOOD, BAD, CIVILIAN, ASSASIN
-
+#from codenames.gameplay.ai2_hack import Clue
+Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
 class Giver:
     """
     Parameters
@@ -16,9 +17,10 @@ class Giver:
     """
     def __init__(self,
                  board: List[str],
-                 target_IDs: List[str],
+                 allIDs: List[int],
                  embedding_handler: EmbeddingHandler) -> None:
         self.board = board
+        self.allIDs = allIDs
         self.embedding_handler = embedding_handler
    
     def get_next_clue(self,

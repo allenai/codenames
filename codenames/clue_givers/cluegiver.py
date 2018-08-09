@@ -1,8 +1,8 @@
- from overrides import overrides
-from codenames.clue_givers.clue_giver import Giver
+from overrides import overrides
+from codenames.clue_givers.giver import Giver
 from gensim.models import KeyedVectors
 from gensim.test.utils import datapath, get_tmpfile
-from itertools import combinations
+from itertools import combinations, chain
 from collections import namedtuple
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.gameplay.ai2_hack import Clue
@@ -17,18 +17,18 @@ import operator
 class ClueGiver(Giver):
 
     def __init__(self, board: [str],
-                 target_words: [str],
+                 allIDs: [int],
                  embeddinghandler: EmbeddingHandler):
-        #Giver.__init__(self, board, target_words):
-
-        self.pos_words = target_words
+        self.board = board
+        self.pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
         #TODO consider neutral words and assassin
-        self.neg_words = [word for word in board if word not in target_words]
-        self.model = embeddinghandler.embedding
+        self.neg_words = [word for word in board if word not in self.pos_words]
+        #self.model = embeddinghandler.embedding
+        self.model = embeddinghandler
 
-    NUM_CLUES = 3
+    NUM_CLUES = 10
     ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
-    def get_clues(self, group, neg_words, num_clues=NUM_CLUES):
+    def __get_clues(self, group, neg_words, num_clues=NUM_CLUES):
         clues = []
         count = len(group)
         
@@ -52,7 +52,8 @@ class ClueGiver(Giver):
             clue_cosine = np.dot(clue_vectors[:, np.newaxis], clue_vector)
             neg_cosine = np.dot(neg_vectors[:, np.newaxis], clue_vector)
             min_clue_cosine = np.min(clue_cosine)
-            
+            print('potential clue')
+            print(clue)
             max_neg_cosine = np.max(neg_cosine)
             if max_neg_cosine >= min_clue_cosine:
                 continue
@@ -61,23 +62,35 @@ class ClueGiver(Giver):
 
     '''List of Clues sorted by descending Cosine distance'''
     def get_next_clue(self, game_state: [int],
-                      score: int): #return list of clue objects in sorted list
+                      score: int):
+        print(self.pos_words)
+        print(self.neg_words)
+        available_targets = [word for word in self.pos_words if game_state[self.board.index(word)] != -1]
+        print(available_targets)
         all_clues = []
-        num_words = len(get_available_choices(game_state))
-        for count in range(num_words, 0, -1): #change num_words if we want to limit to max of X number of target words
-            for group in combinations(range(num_words),count): 
-               all_clues.append(self.get_clues(group, self.neg_words))
-        all_clues = all_clues.sort(key=operator.itemgetter(1))
+        num_words = len(available_targets)
+        for count in range(num_words, 0, -1):
+            for group in combinations(range(num_words),count):
+                print(group, self.neg_words)
+                target_group = [available_targets[i] for i in group]
+                print('target words')
+                print(target_group)
+                all_clues.append(self.__get_clues(target_group, self.neg_words))
+        all_clues = list(chain.from_iterable(all_clues))
+        all_clues.sort(key=operator.itemgetter(1))
         all_clues = [clue[0] for clue in all_clues]
         return all_clues
 
 
 def main():
-    test_embed = EmbeddingHandler("./test_embeds.p")
-    test_board = ["woman", "man", "girl", "boy"]
+    #test_embed = EmbeddingHandler("./test_embeds.p")
+    test_embed = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
+    test_board = ["woman", "man", "girl", "boy", "blue", "cat", "queen", "king"]
+    test_allIDs = [1, 2, 2, 1, -1, 1, 2, 3]
     test_target = ["woman", "boy"]
-    cg = ClueGiver(test_board, test_target, test_embed)
-    cg.get_next_clue([1, 2, 2, 1])
+    cg = ClueGiver(test_board, test_allIDs, test_embed)
+    print('cllllue')
+    print(cg.get_next_clue([-1, 2, 2, 1, -1, 1, 2, 3], 3))
 
 
 if __name__ == "__main__":
