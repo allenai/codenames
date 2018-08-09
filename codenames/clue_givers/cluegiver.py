@@ -64,7 +64,7 @@ class ClueGiver(Giver):
         return clues
 
     '''List of Clues sorted by descending Cosine distance'''
-    def get_next_clue(self, game_state: [int],
+    def get_next_clue(self, game_state: List[int],
                       score: int):
         logging.info(self.pos_words)
         logging.info(self.neg_words)
