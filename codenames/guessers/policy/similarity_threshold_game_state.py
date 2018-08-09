@@ -8,8 +8,11 @@ class SimilarityThresholdGameStatePolicy(GuesserPolicy, nn.Module):
     '''
     embed_size is the size of the word embeddings
     '''
-    def __init__(self, embed_size):
+    def __init__(self, embed_size, seed=42):
         super(GuesserPolicy, self).__init__()
+
+        torch.manual_seed(seed)
+
         self.embed_size = embed_size
         #Similarity matrix
         self.W = nn.Parameter(torch.rand(self.embed_size, self.embed_size), requires_grad = True)
