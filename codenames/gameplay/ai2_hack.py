@@ -8,8 +8,6 @@ from codenames.guessers.guesser import Guesser
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD
 from codenames.gameplay.engine import GameEngine
 
-Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
-
 SCORE_CORRECT_GUESS = 1
 SCORE_INCORRECT_GUESS = -1
 SCORE_ASSASSIN_GUESS = -1

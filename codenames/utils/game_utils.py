@@ -1,4 +1,5 @@
 from typing import List
+from collections import namedtuple
 
 
 UNREVEALED = -1
@@ -10,6 +11,8 @@ BAD = 2
 CIVILIAN = 3
 
 ASSASSIN = 0
+
+Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
 
 
 def get_available_choices(board: List[str],
