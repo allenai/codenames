@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from codenames.utils.file_utils import read_lines
+from codenames.utils.file_utils import read_lines, read_lines_tokens
 import spacy
 from gensim.models import Word2Vec
 import logging
@@ -34,16 +34,16 @@ def main(args):
                 all_sentences.append(sentence)
         tokenized_lc_file.close()
     else:
-        all_sentences = read_lines(tokenized_lowercased_filename)
+        all_sentences = read_lines_tokens(tokenized_lowercased_filename)
 
     logging.info("Found {} sentences".format(len(all_sentences)))
 
     model = Word2Vec(
         sentences=all_sentences,
         size=300,
-        window=10,
+        window=5,
         workers=workers,
-        negative=10,
+        negative=5,
         min_count=50,
         sg=1,
         iter=10
