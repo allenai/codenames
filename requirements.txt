@@ -1,5 +1,6 @@
 # command line interfaces
 click
+termcolor
 
 # interactive programming
 ipython

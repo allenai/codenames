@@ -2,7 +2,6 @@ from collections import namedtuple
 from typing import List
 from collections import namedtuple
 
-
 UNREVEALED = -1
 
 GOOD = 1
