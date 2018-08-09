@@ -4,9 +4,10 @@
 
 import json
 import os
+import os.path
 import sys
 
-CONFIG_FILE = "gameplay/config.json"
+CONFIG_FILE = os.path.dirname(__file__) + "/config.json"
 
 
 class Config(object):

@@ -3,7 +3,7 @@ from random import choices, shuffle
 from typing import List
 
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD
-from gameplay.engine import GameEngine
+from codenames.gameplay.engine import GameEngine
 
 Clue = namedtuple('Clue', ['clue_word', 'intended_board_words', 'count'])
 
@@ -90,7 +90,7 @@ class GameWrapper:
         for word in guessed_words:
             guess_reward = self._apply_guess(word)
             guess_list_rewards.append(guess_reward)
-            if guess_reward < 0:
+            if guess_reward <= 0:
                 break
 
         return guess_list_rewards
@@ -132,26 +132,46 @@ class RandomGuesser:
 
 
 def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=None):
+    print('||| initializing all modules.')
     game = GameWrapper(board_size, board_data)
     giver = RandomGiver()
     guesser = RandomGuesser(game.engine.board)
 
+    print('||| data: {}.'.format(list(zip(game.engine.board, game.engine.owner))))
+
     turn = 1
     while not game.is_game_over():
+        print('||| starting turn {}'.format(turn))
         # get a list of clues.
+        print('||| calling giver.get_next_clue.')
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
-        # find the first legal clue.
+        # find the first legal clue, then proceed.
         first_valid_clue = None
         for clue in clue_objects:
+            print('||| checking if clue = ({}, {}) is valid.'.format(clue.clue_word, clue.count))
             if game.is_valid_clue(clue_objects[0].clue_word):
                 first_valid_clue = clue
-
+                break
+                
         if first_valid_clue is None:
             raise RuntimeError('All clues given were illegal.')
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
+        print('||| calling guesser with the first valid clue: ({}, {}).'.format(clue.clue_word, clue.count))
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
+        print('||| guesser said: {}'.format(guessed_words))
         guess_list_rewards = game.apply_guesses(first_valid_clue, guessed_words)
+        print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))))
         guesser.report_reward(guess_list_rewards)
         turn += 1
+        print('||| game is over? {}'.format(game.is_game_over()))
+
+    print('||| result: {}'.format(game.result))
+    print('||| score: {}'.format(game.cumulative_score))
+
+def main():
+    play_game()
+  
+if __name__== "__main__":
+    main()
