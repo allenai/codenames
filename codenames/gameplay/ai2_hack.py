@@ -132,6 +132,7 @@ class GameWrapper:
 
         return [team2_guess]
 
+
 class RandomGiver(Giver):
     '''
   A clue giver who randomly picks the clue word from a vocabulary.
@@ -192,7 +193,7 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
             if game.is_valid_clue(clue_objects[0].clue_word):
                 first_valid_clue = clue
                 break
-                
+
         if first_valid_clue is None:
             raise RuntimeError('All clues given were illegal.')
 
@@ -210,10 +211,12 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
         if not game.is_game_over():
             print('||| now, the imaginary team2 will "play".')
             team2_guessed_words = game.apply_team2_guesses()
-            print('||| team2 revealed that the following words belong to them: {}'.format(team2_guessed_words))
+            print('||| team2 revealed that the following words belong to them: {}'.format(
+                team2_guessed_words))
 
     logging.info('||| result: {}'.format(game.result))
     logging.info('||| score: {}'.format(game.cumulative_score))
+
 
 
 def main():
