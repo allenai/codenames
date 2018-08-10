@@ -345,6 +345,7 @@ def main(args):
     all_turns = []
     num_positive_score = 0
     start_time = datetime.datetime.now()
+    print("start playing!!")
     for i, board_data in enumerate(all_game_data):
         saved_path = ""
         save_now = i % 100
