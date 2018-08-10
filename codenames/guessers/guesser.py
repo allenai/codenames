@@ -10,11 +10,8 @@ class Guesser:
     embedding_file : `str`
         Location of pickled embeddings
     """
-    def __init__(self,
-                 board: List[str]) -> None:
-        self.board = board
-
     def guess(self,
+              board: List[str],
               clue: str,
               count: int,
               game_state: List[int],

@@ -12,11 +12,9 @@ from codenames.guessers.policy.similarity_threshold_game_state import Similarity
 
 class LearnedGuesser(Guesser):
     def __init__(self,
-                 board: List[str],
                  embedding_handler: EmbeddingHandler,
                  policy: GuesserPolicy,
                  learning_rate: float) -> None:
-        super(LearnedGuesser, self).__init__(board)
         self.policy = policy
         self.guess_history = None
         self.guess_log_probs = None
@@ -25,6 +23,7 @@ class LearnedGuesser(Guesser):
 
     @overrides
     def guess(self,
+              board: List[str],
               clue: str,
               count: int,
               game_state: List[int],
@@ -35,7 +34,7 @@ class LearnedGuesser(Guesser):
             return []
         option_vectors = []
         known_options = []
-        for option in util.get_available_choices(self.board, game_state):
+        for option in util.get_available_choices(board, game_state):
             option_vector = self.embedding_handler.get_word_vector(option)
             if option_vector is not None:
                 option_vectors.append(option_vector)
