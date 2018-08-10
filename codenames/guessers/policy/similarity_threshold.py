@@ -33,7 +33,7 @@ class SimilarityThresholdPolicy(GuesserPolicy, nn.Module):
         m = nn.Sigmoid()
         predicted_similarities = m(torch.matmul(torch.matmul(clue_vector, self.W),
                                                 torch.t(options_matrix)))
-        clamped_similarities = torch.clamp(predicted_similarities - self.threshold, 0.0, 1.0)
+        clamped_similarities = torch.clamp(predicted_similarities - self.threshold, 0.001, 1.0)
         return clamped_similarities
 
 
