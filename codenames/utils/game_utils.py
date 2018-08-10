@@ -18,9 +18,9 @@ DEFAULT_NUM_CLUES = 10
 
 DEFAULT_NUM_TARGETS = 4
 
-CIVILIAN_PENALTY = .05
-ASSASSIN_PENALTY = .1
-MULTIGROUP_PENALTY = 0
+CIVILIAN_PENALTY = .0
+ASSASSIN_PENALTY = .0
+MULTIGROUP_PENALTY = .0
 
 def get_available_choices(board: List[str],
                           game_state: List[int]) -> List[str]:

@@ -17,10 +17,13 @@ class HeuristicGiver(Giver):
                  embedding_handler: EmbeddingHandler):
         self.embedding_handler = embedding_handler
 
+    def _cosine(self, w1, w2):
+        return 
+
     ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
     def _get_clues(self, pos_words_subset, neg_words, civ_words, ass_words, aggressive, num_clues=DEFAULT_NUM_CLUES,MULTIGROUP_PENALTY=MULTIGROUP_PENALTY):
         clues = []
-        count = len(pos_words_subset)
+        count = len(pos_words_subset) - 1
 
         pos_words_vectors = self.embedding_handler.embed_words_list(pos_words_subset)
         neg_words_vectors = self.embedding_handler.embed_words_list(neg_words)
@@ -33,12 +36,12 @@ class HeuristicGiver(Giver):
         mean_vector = pos_words_vectors.mean(axis=0)
         mean_vector /= np.sqrt(mean_vector.dot(mean_vector))
 
-        cosines = np.dot(self.embedding_handler.embedding_weights, mean_vector).reshape(-1)
-        closest = np.argsort(cosines)[::-1]
+        dotproducts = np.dot(self.embedding_handler.embedding_weights, mean_vector).reshape(-1)
+        closest = np.argsort(dotproducts)[::-1]
 
         '''Skew 'good clues' towards larger groups of target words'''
         if aggressive:
-            if count == 1:
+            if count <= 1:
                 MULTIGROUP_PENALTY += .1
             elif count <= 3:
                 MULTIGROUP_PENALTY += .4
