@@ -230,8 +230,13 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
         _input(', press ENTER to see team1 guesses.\n', verbose=verbose)
 
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
-        _print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))),
-               verbose=verbose)
+
+        rewards_out = []
+        for w, r in zip(guessed_words, guess_list_rewards):
+            if r < SCORE_CORRECT_GUESS:
+                break
+            rewards_out.append((w, r))
+        _print('||| rewards: {}'.format(rewards_out), verbose=verbose)
         if saved_path and game.is_game_over():
             guesser.report_reward(guess_list_rewards, saved_path)
         else:
@@ -292,7 +297,7 @@ def main(args):
                 num_wins += 1
             scores.append(score)
 
-        mean_score = sum(scores)/len(scores)
+        mean_score = sum(scores) / len(scores)
         print(f"Played {args.num_games} games.")
         print(f"Team 1 won {num_wins} times.")
         print(f"Average score is {mean_score}")
@@ -307,7 +312,8 @@ if __name__ == "__main__":
     argparser.add_argument("--num-games", type=int, dest="num_games",
                            help="Number of games to play if not interactive (default=1000)",
                            default=1000)
-    argparser.add_argument("--embeddings_file", type=str, dest="embeddings_file", default="data/uk_embeddings.txt")
+    argparser.add_argument("--embeddings_file", type=str, dest="embeddings_file",
+                           default="data/uk_embeddings.txt")
     argparser.add_argument("--load-model", dest="load_model", default=None)
     args = argparser.parse_args()
     main(args)
