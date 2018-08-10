@@ -14,12 +14,14 @@ class LearnedGuesser(Guesser):
     def __init__(self,
                  embedding_handler: EmbeddingHandler,
                  policy: GuesserPolicy,
-                 learning_rate: float) -> None:
+                 learning_rate: float,
+                 train: bool=False) -> None:
         self.policy = policy
         self.guess_history = None
         self.guess_log_probs = None
         self.embedding_handler = embedding_handler
         self.optimizer = torch.optim.Adam(policy.parameters(), lr=learning_rate)
+        self.train = train
 
     @overrides
     def guess(self,
@@ -85,12 +87,13 @@ class LearnedGuesser(Guesser):
     def report_reward(self,
                       rewards: List[int],
                       save: str=None) -> None:
-        if self.guess_log_probs is None:
-            raise RuntimeError("Haven't made any guesses yet!")
-        loss = torch.mul(torch.sum(torch.mul(torch.Tensor(rewards),
-                                             torch.stack(self.guess_log_probs))), -1)
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-        if save:
-            torch.save(self.policy, save)
+        if self.train:
+            if self.guess_log_probs is None:
+                raise RuntimeError("Haven't made any guesses yet!")
+            loss = torch.mul(torch.sum(torch.mul(torch.Tensor(rewards),
+                                                 torch.stack(self.guess_log_probs))), -1)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            if save:
+                torch.save(self.policy, save)
