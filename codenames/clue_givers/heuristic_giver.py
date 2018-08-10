@@ -14,8 +14,10 @@ from codenames.utils.game_utils import Clue, DEFAULT_NUM_CLUES, UNREVEALED, GOOD
 class HeuristicGiver(Giver):
 
     def __init__(self,
-                 embedding_handler: EmbeddingHandler):
+                 embedding_handler: EmbeddingHandler,
+                 blacklist: List[str]=[]):
         self.embedding_handler = embedding_handler
+        self.blacklist = blacklist
 
     ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
     def _get_clues(self, pos_words_subset, neg_words, civ_words, ass_words, aggressive, num_clues=DEFAULT_NUM_CLUES,MULTIGROUP_PENALTY=MULTIGROUP_PENALTY):
@@ -119,4 +121,7 @@ class HeuristicGiver(Giver):
         clues_by_group = list(chain.from_iterable(clues_by_group))
         clues_by_group.sort(key=operator.itemgetter(1))
         clues_by_group = [clue[0] for clue in clues_by_group]
-        return clues_by_group
+        filtered_clues_by_group = [clue for clue in clues_by_group if clue.clue_word not in self.blacklist]
+        if filtered_clues_by_group:
+            self.blacklist.append(filtered_clues_by_group[0].clue_word)
+        return filtered_clues_by_group
