@@ -243,6 +243,20 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
             guesser.report_reward(guess_list_rewards, saved_path)
         else:
             guesser.report_reward(guess_list_rewards)
+
+        # print the board after team1 plays this turn.
+        game.engine.print_board(spymaster=True, verbose=verbose)
+        _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
+        _print("||| team1's guesses: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
+        if not game.is_game_over():
+            _input(", press ENTER to see team2's next move.", verbose=verbose)
+            team2_guessed_words = game.apply_team2_guesses()
+            # print the board again after team2 plays this turn.
+            game.engine.print_board(spymaster=True, verbose=verbose)
+            _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
+            _print("||| team1's guess: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
+            _print("||| team2 revealed: {}\n".format(team2_guessed_words), verbose=verbose)
+
         turn += 1
 
     _print('\n||| termination condition: {}\n'.format(game.result), verbose=verbose)
