@@ -1,6 +1,7 @@
 # command line interfaces
 click
 termcolor
+tqdm
 
 # interactive programming
 ipython
