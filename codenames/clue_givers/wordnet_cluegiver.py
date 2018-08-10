@@ -179,10 +179,10 @@ class WordnetClueGiver(Giver):
 
         pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
         # negative words
-        neg_words = [word for word in board if word not in self.pos_words]
+        neg_words = [board[idx] for idx, val in enumerate(allIDs) if val != 1]
 
-        available_targets = [word for word in pos_words if game_state[self.board.index(word)] != -1]
-        active_neg_words = [word for word in neg_words if game_state[self.board.index(word)] != -1]
+        available_targets = [word for word in pos_words if game_state[board.index(word)] != -1]
+        active_neg_words = [word for word in neg_words if game_state[board.index(word)] != -1]
         logging.info(available_targets)
 
         #scales epsilon based on score
