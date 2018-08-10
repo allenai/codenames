@@ -5,6 +5,7 @@ from itertools import combinations, chain
 from typing import List
 
 import numpy as np
+from random import choices
 
 from codenames.clue_givers.giver import Giver
 from codenames.embedding_handler import EmbeddingHandler
@@ -14,8 +15,12 @@ from codenames.utils.game_utils import Clue, DEFAULT_NUM_CLUES, UNREVEALED, GOOD
 class HeuristicGiver(Giver):
 
     def __init__(self,
-                 embedding_handler: EmbeddingHandler):
+                 embedding_handler: EmbeddingHandler,
+                 blacklist: List[str] = [],
+                 current_board: List[str] = None):
         self.embedding_handler = embedding_handler
+        self.blacklist = blacklist
+        self.current_board = current_board
 
     ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
     def _get_clues(self, pos_words_subset, neg_words, civ_words, ass_words, aggressive, num_clues=DEFAULT_NUM_CLUES,MULTIGROUP_PENALTY=MULTIGROUP_PENALTY):
@@ -50,7 +55,8 @@ class HeuristicGiver(Giver):
             clue_word = self.embedding_handler.index_to_word[clue_index]
 
             clue_vector = self.embedding_handler.get_embedding_by_index(clue_index)
-
+            if clue_word in pos_words_subset:
+                continue
             clue_pos_words_similarities = np.dot(pos_words_vectors, clue_vector)
             clue_neg_words_similarities= np.dot(neg_words_vectors, clue_vector)
             min_clue_cosine = np.min(clue_pos_words_similarities) + MULTIGROUP_PENALTY
@@ -72,6 +78,10 @@ class HeuristicGiver(Giver):
                     continue
             clues.append((Clue(clue_word, pos_words_subset, count),
                           np.mean(clue_pos_words_similarities)))
+        if len(clues) == 0:
+            clue_index = closest[0]
+            clue_word = self.embedding_handler.index_to_word[clue_index]
+            clues.append((Clue(clue_word,pos_words_subset,count),np.mean(clue_pos_words_similarities)))
         return clues
 
     '''List of Clues sorted by descending Cosine distance'''
@@ -81,6 +91,9 @@ class HeuristicGiver(Giver):
                       allIDs: List[int],
                       game_state: List[int],
                       score: int):
+        if self.current_board != board:
+            self.blacklist = []
+            self.current_board = board
         pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == GOOD]
         neg_words = [board[idx] for idx, val in enumerate(allIDs) if val == BAD]
         civ_words = [board[idx] for idx, val in enumerate(allIDs) if val == CIVILIAN]
@@ -116,7 +129,14 @@ class HeuristicGiver(Giver):
                 clues_for_group = self._get_clues(target_group, available_neg, available_civ, available_ass, aggressive)
                 if clues_for_group is not None:
                     clues_by_group.append(self._get_clues(target_group, available_neg, available_civ, available_ass, aggressive))
-        clues_by_group = list(chain.from_iterable(clues_by_group))
-        clues_by_group.sort(key=operator.itemgetter(1))
-        clues_by_group = [clue[0] for clue in clues_by_group]
-        return clues_by_group
+        if len(clues_by_group) == 0:
+            options = choices(list(self.embedding_handler.word_indices.keys()), k=3)
+            for option in options:
+                clues_by_group.append(Clue(clue_word=option, intended_board_words=[], count=0))
+        else:
+            clues_by_group = list(chain.from_iterable(clues_by_group))
+            clues_by_group.sort(key=operator.itemgetter(1),reverse=True)
+            clues_by_group = [clue[0] for clue in clues_by_group]
+        filtered_clues_by_group = [clue for clue in clues_by_group if clue.clue_word not in self.blacklist]
+        self.blacklist.append(filtered_clues_by_group[0].clue_word)
+        return filtered_clues_by_group
