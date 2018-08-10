@@ -7,22 +7,24 @@ from codenames.utils.game_utils import Clue
 import operator
 from typing import List
 import logging
+from sklearn.metrics.pairwise import cosine_similarity
 
 class HeuristicGiver(Giver):
 
     def __init__(self, board: [str],
                  allIDs: List[int],
-                 embeddinghandler: EmbeddingHandler):
+                 embeddinghandler: EmbeddingHandler,
+                 NUM_CLUES: int=50):
         super().__init__(board, allIDs)
         self.assassin = [board[idx] for idx, val in enumerate(allIDs) if val == 0]
         self.pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
         self.neg_words = [board[idx] for idx, val in enumerate(allIDs) if val == 2]
         self.civilians = [board[idx] for idx, val in enumerate(allIDs) if val == 3]
         self.embedding_handler = embeddinghandler
+        self.NUM_CLUES = NUM_CLUES
 
-    NUM_CLUES = 50
     ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
-    def _get_clues(self, group, assassin, neg_words, civilians, aggressive, num_clues=NUM_CLUES):
+    def _get_clues(self, group, assassin, neg_words, civilians, aggressive, NUM_CLUES):
         clues = []
         count = len(group)
 
@@ -38,10 +40,8 @@ class HeuristicGiver(Giver):
         mean_vector = clue_vectors.mean(axis=0)
         mean_vector /= np.sqrt(mean_vector.dot(mean_vector))
 
-        cosines = np.dot(self.embedding_handler.syn0[:, np.newaxis], mean_vector).reshape(-1)
+        cosines = cosine_similarity(self.embedding_handler.syn0, mean_vector.reshape(1,-1)).flatten()
         closest = np.argsort(cosines)[::-1]
-
-
         civilian_penalty = .05
         assassin_penalty = .08
 
@@ -53,30 +53,30 @@ class HeuristicGiver(Giver):
         else:
             multigroup_penalty = 0
 
-        for i in range(num_clues):
+        for i in range(NUM_CLUES):
             clue = None
             clue_index = closest[i]
             clue = self.embedding_handler.index2word[clue_index]
             if clue.lower() in group:
                 continue
-            clue_vector = self.embedding_handler.syn0[clue_index]
-            clue_cosine = np.dot(clue_vectors[:, np.newaxis], clue_vector)
+            clue_vector = self.embedding_handler.syn0[clue_index].reshape(1,-1)
+            clue_cosine = cosine_similarity(clue_vectors, clue_vector).flatten()
             min_clue_cosine = np.min(clue_cosine) + multigroup_penalty
 
 
             if neg_words:
-                neg_cosine = np.dot(neg_vectors[:, np.newaxis], clue_vector)
+                neg_cosine = cosine_similarity(neg_vectors, clue_vector)
                 max_neg_cosine = np.max(neg_cosine)
                 if max_neg_cosine >= min_clue_cosine:
                     continue
 
             if civilians:
-                civilian_cosine = np.dot(civilian_vectors[:, np.newaxis], clue_vector)
+                civilian_cosine = cosine_similarity(civilian_vectors, clue_vector).flatten()
                 max_civ_cosine = np.max(civilian_cosine)
                 if max_civ_cosine >= min_clue_cosine - civilian_penalty:
                     continue
             if assassin:
-                assassin_cosine = np.dot(assassin_vectors[:, np.newaxis], clue_vector)
+                assassin_cosine = cosine_similarity(assassin_vectors, clue_vector).flatten()
                 max_ass_cosine = np.max(assassin_cosine)
                 if max_ass_cosine >= min_clue_cosine- assassin_penalty:
                     continue
@@ -111,7 +111,7 @@ class HeuristicGiver(Giver):
             for group in combinations(range(num_words),count):
                 logging.info(group, self.neg_words)
                 target_group = [available_targets[i] for i in group]
-                all_clues.append(self._get_clues(target_group, available_assassins, available_neg_words, available_civilians, aggressive))
+                all_clues.append(self._get_clues(target_group, available_assassins, available_neg_words, available_civilians, aggressive, self.NUM_CLUES))
         all_clues = list(chain.from_iterable(all_clues))
         all_clues.sort(key=operator.itemgetter(1),reverse=True)
         all_clues = self._unique_clues(all_clues)
@@ -124,8 +124,6 @@ def main():
     test_board = ["water", "notebook", "board", "boy", "shoe", "cat", "pear", "sandwich","chair","pants","phone","internet"]
     test_allIDs = [1, 2, 2, 1, 3, 1, 2, 3,1,1,0,1]
     cg = HeuristicGiver(test_board, test_allIDs, test_embed)
-    cg.get_next_clue([-1,-1,-1,0,-1,0,0,0,-1,-1,-1,-1], 1)
-
 
 
 if __name__ == "__main__":
