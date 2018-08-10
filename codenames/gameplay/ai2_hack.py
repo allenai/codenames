@@ -223,7 +223,7 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, save=
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
         _print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))),
                verbose=verbose)
-        if save != "":
+        if save != "" and game.is_game_over():
             guesser.report_reward(guess_list_rewards, save)
         else:
             guesser.report_reward(guess_list_rewards)
@@ -249,7 +249,7 @@ def main(args):
     elif args.guesser_type == "random":
         guesser = RandomGuesser()
     elif args.guesser_type == "learned":
-        if args.load_model != "":
+        if args.load_model:
             guesser = LearnedGuesser(embedding_handler,
                                      policy=torch.load(args.load_model),
                                      learning_rate=0.01)
@@ -266,15 +266,15 @@ def main(args):
         scores = []
         num_wins = 0
         for i in range(args.num_games):
-            save = ""
+            saved_path = ""
             if args.guesser_type == "learned" and (i % 100 == 0 or i == args.num_games - 1):
                 if not os.path.exists("./models"):
                     os.makedirs("./models")
-                save = "./models/learned" + str(i)
+                saved_path = "./models/learned" + str(i)
 
             score = play_game(giver=giver, guesser=guesser,
                               board_size=args.board_size, verbose=False,
-                              save=save)
+                              save=saved_path)
             if score > 0:
                 num_wins += 1
             scores.append(score)
@@ -293,6 +293,6 @@ if __name__== "__main__":
     argparser.add_argument("--num-games", type=int, dest="num_games",
                            help="Number of games to play if not interactive (default=1000)",
                            default=1000)
-    argparser.add_argument("--load-model", dest="load_model", default="")
+    argparser.add_argument("--load-model", dest="load_model", default=None)
     args = argparser.parse_args()
     main(args)
