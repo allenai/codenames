@@ -348,13 +348,16 @@ def main(args):
     start_time = datetime.datetime.now()
     for i, board_data in tqdm.tqdm(enumerate(all_game_data)):
         saved_path = ""
-        save_now = i % 100
-        if args.num_games is not None:
-            save_now = save_now or i == args.num_games - 1
-        if args.guesser_type == "learned" and save_now:
+        save_now = (i % 10 == 0) or (i == args.num_games - 1)
+        import pdb
+        pdb.set_trace()
+        if args.guesser_type.startswith("learned") and save_now:
+            import pdb
+            pdb.set_trace()
             if not os.path.exists("./models"):
                 os.makedirs("./models")
             saved_path = "./models/learned" + str(i)
+
 
         score, termination_condition, turns = play_game(giver=giver, guesser=guesser,
                                                         board_size=args.board_size, 
@@ -402,7 +405,8 @@ if __name__ == "__main__":
     argparser.add_argument("--giver", type=str, dest="giver_type", default="heuristic")
     argparser.add_argument("--size", type=int, dest="board_size", default="5")
     argparser.add_argument("--interactive", action="store_true")
-    argparser.add_argument("--num-games", type=int, help="Number of games to play")
+    argparser.add_argument("--num-games", type=int, help="Number of games to play",
+                           dest="num_games", default=1000)
     argparser.add_argument("--game-data", type=str, default="data/codenames_dev.games")
     argparser.add_argument("--guesser-embeddings-file", type=str, dest="guesser_embeddings_file",
                            default="data/uk_embeddings.txt")
