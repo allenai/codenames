@@ -28,8 +28,8 @@ class SimilarityThresholdPolicy(GuesserPolicy, nn.Module):
             remaining unguessed words on the game board)
     '''
     def forward(self,
-                clue_vector: torch.cuda.Tensor,
-                options_matrix: torch.cuda.Tensor) -> torch.Tensor:
+                clue_vector: torch.Tensor,
+                options_matrix: torch.Tensor) -> torch.Tensor:
         m = nn.Sigmoid()
         predicted_similarities = m(torch.matmul(torch.matmul(clue_vector, self.W),
                                                 torch.t(options_matrix)))
