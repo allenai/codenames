@@ -225,7 +225,7 @@ class Dataset():
 
 def main():
     guesser_embed = EmbeddingHandler("./data/uk_embeddings.txt")
-    section_sizes = [1000, 100, 100]
+    section_sizes = [100000, 1000, 1000]
     section_names = ['train', 'dev', 'test']
     for dataset_name in dataset_codes.keys():
         d =  Dataset(dataset=dataset_name)
