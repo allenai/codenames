@@ -3,9 +3,10 @@ import numpy as np
 from scipy.spatial.distance import cosine
 from embedding_handler import EmbeddingHandler
 import pickle
+from tqdm import tqdm
 
-dataset_codes = {"CODENAMES": "codenames_words.txt", "SCIENCE": "science_words.txt",
-                 "COMMON": "common_nouns_extrinsic.txt", "PROPER": "proper_nouns_extrinsic.txt"}
+dataset_codes = {"CODENAMES": "./data/codenames_words.txt", "SCIENCE": "./data/science_words.txt",
+                 "COMMON": "./data/common_nouns_extrinsic.txt", "PROPER": "./data/proper_nouns_extrinsic.txt"}
 
 class Dataset():
 
@@ -20,7 +21,7 @@ class Dataset():
         self.dataset_file = dataset_codes[dataset]
         self.data = []
 
-        with open("../data/" + self.dataset_file) as f:
+        with open(self.dataset_file) as f:
             for line in f.readlines():
                 self.data.append(line.lower().replace("\n", ""))
 
@@ -51,10 +52,10 @@ class Dataset():
         #This is the dataset restricted to valid words as per embeddings
         restricted_dataset = self.data.copy()
         if guesser != None:
-            restricted_dataset = [w for w in restricted_dataset if w in guesser.embedding]
+            restricted_dataset = [w for w in restricted_dataset if w in guesser.word_indices]
 
         if clue_giver != None:
-            restricted_dataset = [w for w in restricted_dataset if w in clue_giver.embedding]
+            restricted_dataset = [w for w in restricted_dataset if w in clue_giver.word_indices]
 
 
         board_words_str = ""
@@ -89,10 +90,10 @@ class Dataset():
 
         blacklisted_dataset = []
         if guesser != None:
-            blacklisted_dataset.extend([w for w in self.data if w not in guesser.embedding])
+            blacklisted_dataset.extend([w for w in self.data if w not in guesser.word_indices])
 
         if clue_giver != None:
-            blacklisted_dataset.extend([w for w in self.data if w not in clue_giver.embedding])
+            blacklisted_dataset.extend([w for w in self.data if w not in clue_giver.word_indices])
 
         board_words_str = ""
 
@@ -158,13 +159,13 @@ class Dataset():
 
         blacklisted_dataset = []
         if guesser != None:
-            blacklisted_dataset.extend([w for w in self.data if w not in guesser.embedding])
+            blacklisted_dataset.extend([w for w in self.data if w not in guesser.word_indices])
 
         if clue_giver != None:
-            blacklisted_dataset.extend([w for w in self.data if w not in clue_giver.embedding])
+            blacklisted_dataset.extend([w for w in self.data if w not in clue_giver.word_indices])
 
         #Since we are using `similarity`'s metric, each potential word has to be in similarity
-        blacklisted_dataset.extend([w for w in self.data if w not in similarity.embedding])
+        blacklisted_dataset.extend([w for w in self.data if w not in similarity.word_indices])
 
         if num_clusters != -1:
             words = []
@@ -185,8 +186,8 @@ class Dataset():
                     if word in seed_words or word in blacklisted_dataset or word in similar_words:
                         continue
                     for seed_word in seed_words:
-                        seed_embed = similarity.embedding[seed_word]
-                        if cosine(seed_embed, similarity.embedding[word]) < epsilon:
+                        seed_embed = similarity.get_word_vector(seed_word)
+                        if cosine(seed_embed, similarity.get_word_vector(word)) < epsilon:
                             similar_words.append(word)
                 if len(similar_words) >= size-num_clusters:
                     words.extend(random.sample(similar_words, size-num_clusters))
@@ -203,12 +204,12 @@ class Dataset():
                 while seed_word in words or seed_word == "" or seed_word in blacklisted_dataset:
                     seed_word = random.sample(self.data, 1)[0]
                 words.append(seed_word)
-                seed_embed = similarity.embedding[seed_word]
+                seed_embed = similarity.get_word_vector(seed_word)
                 for word in self.data:
                     if word == seed_word or word in blacklisted_dataset:
                         continue
 
-                    if cosine(seed_embed, similarity.embedding[word]) < epsilon:
+                    if cosine(seed_embed, similarity.get_word_vector(word)) < epsilon:
                         words.append(word)
 
             random.shuffle(words)
@@ -223,13 +224,24 @@ class Dataset():
 
 
 def main():
-    guesser_embed = EmbeddingHandler("./test_embeds.p")
-    print("TESTS")
-    d =  Dataset(dataset="CODENAMES")
-    #for i in range(100):
-    sample = d.sample_similar_embeddings(similarity=guesser_embed, guesser=guesser_embed, clue_giver=guesser_embed, num_clusters=5)
-    print(sample)
-
+    guesser_embed = EmbeddingHandler("./data/uk_embeddings.txt")
+    section_sizes = [1000, 100, 100]
+    section_names = ['train', 'dev', 'test']
+    for dataset_name in dataset_codes.keys():
+        d =  Dataset(dataset=dataset_name)
+        for section_size, section_name in zip(section_sizes, section_names):
+            section_filename = '{}_{}.games'.format(dataset_name.lower(), section_name)
+            samples_counter = 0
+            with open(section_filename, mode='wt') as section_file:                
+                for i in tqdm(range(section_size)):
+                    #sample = d.sample_similar_embeddings(similarity=guesser_embed, 
+                    #                                     guesser=guesser_embed, 
+                    #                                     clue_giver=guesser_embed, 
+                    #                                     num_clusters=7)
+                    sample = d.sample_random()
+                    section_file.write('{}\n'.format(sample))
+                    samples_counter += 1
+            print('finished writing {} samples of game data to {}'.format(section_size, section_filename))
 
 if __name__ == "__main__":
     main()
