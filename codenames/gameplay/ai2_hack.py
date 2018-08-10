@@ -13,6 +13,7 @@ from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 from codenames.guessers.heuristic_guesser import HeuristicGuesser
 from codenames.guessers.learned_guesser import LearnedGuesser
+from codenames.guessers.policy.similarity_threshold_game_state import SimilarityThresholdGameStatePolicy
 from codenames.guessers.policy.similarity_threshold import SimilarityThresholdPolicy
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD, Clue
 from codenames.gameplay.engine import GameEngine
@@ -291,6 +292,15 @@ def main(args):
             guesser = LearnedGuesser(embedding_handler,
                                      policy=SimilarityThresholdPolicy(300),
                                      learning_rate=0.01)
+    elif args.guesser_type == "learnedstate":
+        if args.load_model:
+            guesser = LearnedGuesser(embedding_handler,
+                                     policy=torch.load(args.load_model),
+                                     learning_rate=0.01)
+        else:
+            guesser = LearnedGuesser(embedding_handler,
+                                     policy=SimilarityThresholdGameStatePolicy(300),
+                                     learning_rate=0.01)
     else:
         raise NotImplementedError
     if args.interactive:
@@ -300,6 +310,7 @@ def main(args):
         scores = []
         num_wins = 0
         for i in range(args.num_games):
+            print(i)
             saved_path = ""
             if args.guesser_type == "learned" and (i % 100 == 0 or i == args.num_games - 1):
                 if not os.path.exists("./models"):
