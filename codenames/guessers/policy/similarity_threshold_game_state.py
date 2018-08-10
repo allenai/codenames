@@ -36,7 +36,7 @@ class SimilarityThresholdGameStatePolicy(GuesserPolicy, nn.Module):
         predicted_similarities = m(torch.matmul(torch.matmul(clue_vector, self.W),
                                                 torch.t(options_matrix)))
         calculated_threshold = m(torch.matmul(parameterized_game_state, self.Wt))
-        clamped_similarities = torch.clamp(predicted_similarities - calculated_threshold, 0.0, 1.0)
+        clamped_similarities = torch.clamp(predicted_similarities - calculated_threshold, 0.001, 1.0)
         return clamped_similarities
 
 

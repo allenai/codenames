@@ -1,9 +1,14 @@
 import sys
 import os
+import re
+import tqdm
+import datetime
+from collections import defaultdict
 
 from random import choices, shuffle
 from typing import List
 from termcolor import colored
+import numpy as np
 import argparse
 import torch
 
@@ -14,6 +19,7 @@ from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 from codenames.guessers.heuristic_guesser import HeuristicGuesser
 from codenames.guessers.learned_guesser import LearnedGuesser
+from codenames.guessers.policy.similarity_threshold_game_state import SimilarityThresholdGameStatePolicy
 from codenames.guessers.policy.similarity_threshold import SimilarityThresholdPolicy
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD, Clue
 from codenames.gameplay.engine import GameEngine
@@ -37,7 +43,7 @@ class GameWrapper:
         if board_data == None:
             self.engine.initialize_random_game(size=board_size)
         else:
-            self.engine.initialize_initialize_from_words(board_data, size=board_size)
+            self.engine.initialize_from_words(board_data, size=board_size)
 
         # initialize game state.
         self.game_state = [UNREVEALED] * (board_size * board_size)
@@ -189,15 +195,20 @@ def _input(message, verbose):
 
 
 def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved_path=None):
+    '''
+    returns cumulative_team1_score: int, termination_condition: str, team1_turns: int
+    '''
     _print('||| initializing all modules.\n', verbose=verbose)
     game = GameWrapper(board_size, board_data)
     _print('||| data: {}.\n'.format(list(zip(game.engine.board, game.engine.owner))),
            verbose=verbose)
 
-    turn = 1
+    turn = 0
     while not game.is_game_over():
-        if turn == 1:
+        if turn == 0:
             game.engine.print_board(spymaster=True, verbose=verbose)
+        else:
+            game.engine.print_board(spymaster=True, verbose=verbose, clear_screen=False)
         _input('\n||| press ENTER to see the next clue for team1.', verbose=verbose)
 
         # get a list of clues.
@@ -215,6 +226,7 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
 
         if first_valid_clue is None:
             # All clues are illegal. Abandoning game!
+            game.result = 'All clues given were illegal.'
             break
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
@@ -231,75 +243,148 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
         _input(', press ENTER to see team1 guesses.\n', verbose=verbose)
 
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
-        _print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))),
-               verbose=verbose)
+
+        rewards_out = []
+        for w, r in zip(guessed_words, guess_list_rewards):
+            if r < SCORE_CORRECT_GUESS:
+                break
+            rewards_out.append((w, r))
+        _print('||| rewards: {}\n'.format(rewards_out), verbose=verbose)
         if saved_path and game.is_game_over():
             guesser.report_reward(guess_list_rewards, saved_path)
         else:
             guesser.report_reward(guess_list_rewards)
+
+        # print the board after team1 plays this turn.
+        game.engine.print_board(spymaster=True, verbose=verbose)
+        _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
+        _print("||| team1's guesses: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
+        if not game.is_game_over():
+            _input(", press ENTER to see team2's next move.", verbose=verbose)
+            team2_guessed_words = game.apply_team2_guesses()
+            # print the board again after team2 plays this turn.
+            game.engine.print_board(spymaster=True, verbose=verbose)
+            _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
+            _print("||| team1's guess: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
+            _print("||| team2 revealed: {}\n".format(team2_guessed_words), verbose=verbose)
+
         turn += 1
 
     _print('\n||| termination condition: {}\n'.format(game.result), verbose=verbose)
     _print('|||\n', verbose=verbose)
     _print('||| =============== GAME OVER =================\n', verbose=verbose)
     _print('||| =============== team1 score: {}\n'.format(game.cumulative_score), verbose=verbose)
-    # If game.result is None, it means that the giver could not give a clue, and the game was
-    # abandoned.
-    score = game.cumulative_score if game.result is not None else 0
-    return score
-
+    assert game.result is not None
+    return game.cumulative_score, game.result, turn
+    
 
 def main(args):
-    embedding_handler = EmbeddingHandler(args.embeddings_file)
+    guesser_embedding_handler = EmbeddingHandler(args.guesser_embeddings_file)
+    giver_embedding_handler = EmbeddingHandler(args.giver_embeddings_file)
     if args.giver_type == "heuristic":
-        giver = HeuristicGiver(embedding_handler)
+        giver = HeuristicGiver(giver_embedding_handler)
     elif args.giver_type == "random":
-        giver = RandomGiver(embedding_handler)
+        giver = RandomGiver(giver_embedding_handler)
     elif args.giver_type == "wordnet":
         giver = WordnetClueGiver()
     else:
         raise NotImplementedError
 
+    if args.game_data:
+        all_game_data = []
+        for line in open(args.game_data, mode='rt'):
+            # allow comments starting with # or %
+            if line.startswith("#"): continue
+            if line.startswith("%"): continue
+            line = line.strip()
+            words = re.split('[;,]', line)
+            if len(words) != args.board_size * args.board_size:
+                if args.verbose:
+                    sys.stdout.write('WARNING: skipping game data |||{}||| due to a conflict with the specified board size: {}'.format(line, args.board_size))
+                continue
+            all_game_data.append(line.strip())
+    else:
+        # If game data were not specified, we'd like to generate (args.num_games) random 
+        # games. The method `play_game` randomly samples words when the provided game data
+        # is set to None.
+        all_game_data = [None] * args.num_games
+
     if args.guesser_type == "heuristic":
-        guesser = HeuristicGuesser(embedding_handler)
+        guesser = HeuristicGuesser(guesser_embedding_handler)
     elif args.guesser_type == "random":
         guesser = RandomGuesser()
     elif args.guesser_type == "learned":
         if args.load_model:
-            guesser = LearnedGuesser(embedding_handler,
+            guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=torch.load(args.load_model),
                                      learning_rate=0.01)
         else:
-            guesser = LearnedGuesser(embedding_handler,
+            guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=SimilarityThresholdPolicy(300),
+                                     learning_rate=0.01)
+    elif args.guesser_type == "learnedstate":
+        if args.load_model:
+            guesser = LearnedGuesser(guesser_embedding_handler,
+                                     policy=torch.load(args.load_model),
+                                     learning_rate=0.01)
+        else:
+            guesser = LearnedGuesser(guesser_embedding_handler,
+                                     policy=SimilarityThresholdGameStatePolicy(300),
                                      learning_rate=0.01)
     else:
         raise NotImplementedError
-    if args.interactive:
-        play_game(giver=giver, guesser=guesser,
-                  board_size=args.board_size, verbose=True)
-    else:
-        scores = []
-        num_wins = 0
-        for i in range(args.num_games):
-            saved_path = ""
-            if args.guesser_type == "learned" and (i % 100 == 0 or i == args.num_games - 1):
-                if not os.path.exists("./models"):
-                    os.makedirs("./models")
-                saved_path = "./models/learned" + str(i)
+    
+    # keep track of the results of each game.
+    all_scores = []
+    all_termination_conditions = defaultdict(int)
+    all_turns = []
+    num_positive_score = 0
+    start_time = datetime.datetime.now()
+    for i, board_data in tqdm.tqdm(enumerate(all_game_data), desc="games played: "):
+        saved_path = ""
+        if args.guesser_type == "learned" and (i % 100 == 0 or i == args.num_games - 1):
+            if not os.path.exists("./models"):
+                os.makedirs("./models")
+            saved_path = "./models/learned" + str(i)
 
-            score = play_game(giver=giver, guesser=guesser,
-                              board_size=args.board_size, verbose=False,
-                              saved_path=saved_path)
-            if score > 0:
-                num_wins += 1
-            scores.append(score)
+        score, termination_condition, turns = play_game(giver=giver, guesser=guesser,
+                                                        board_size=args.board_size, 
+                                                        board_data=board_data,
+                                                        verbose=args.interactive,
+                                                        saved_path=saved_path)
+        if score > 0:
+            num_positive_score += 1
+        all_scores.append(score)
+        all_termination_conditions[termination_condition] += 1
+        all_turns.append(turns)
+        mean_score = sum(all_scores) / len(all_scores)
+        std_score = np.std(all_scores)
+        mean_turns = sum(all_turns) / len(all_turns)
+        std_turns = np.std(all_turns)
 
-        mean_score = sum(scores)/len(scores)
-        print(f"Played {args.num_games} games.")
-        print(f"Team 1 won {num_wins} times.")
-        print(f"Average score is {mean_score}")
+        # log, for debugging purposes.
+        if args.verbose:
+            # this game's results
+            sys.stdout.write('||| last game score = {}, termination condition = {}, turns = {}\n'.format(score, termination_condition, turns))
+            # summary of all games' results
+            sys.stdout.write('|||\n')
+            sys.stdout.write("||| # of games played = {}, runtime = {}\n".format(len(all_scores), str(datetime.datetime.now() - start_time)))
+            sys.stdout.write(f"||| # of games won (by team1) = {num_positive_score}\n")
+            sys.stdout.write('||| avg. game score = {:.2f}, std. of game score = {:.2f}\n'.format(mean_score, std_score))
+            sys.stdout.write('||| avg. game turns = {:.2f}, std. of game turns = {:.2f}\n'.format(mean_turns, std_turns))
+            for _termination_condition, _count in all_termination_conditions.items():
+                sys.stdout.write('||| % of {}: {:.2f}\n'.format(_termination_condition, 1.0 * _count / len(all_scores)))
 
+    with open(args.experiment_name + '.experiment', mode='wt') as experiment_results_file:
+        experiment_results_file.write('name: {}\n'.format(args.experiment_name))
+        experiment_results_file.write('runtime: {}\n'.format(str(datetime.datetime.now() - start_time)))
+        experiment_results_file.write('time finished: {}\n'.format(str(datetime.datetime.now())))
+        experiment_results_file.write("# of games played: {}\n".format(len(all_scores)))
+        experiment_results_file.write(f"# of games won (by team1) = {num_positive_score}\n")
+        for _termination_condition, _count in all_termination_conditions.items():
+            experiment_results_file.write('% of {}: {:.2f}\n'.format(_termination_condition, 1.0 * _count / len(all_scores)))
+        experiment_results_file.write('avg. game turns = {:.2f}, std. of game turns = {:.2f}\n'.format(mean_turns, std_turns))
+        experiment_results_file.write('avg. game score = {:.2f}, std. of game score = {:.2f}\n'.format(mean_score, std_score))
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
@@ -308,9 +393,14 @@ if __name__ == "__main__":
     argparser.add_argument("--size", type=int, dest="board_size", default="5")
     argparser.add_argument("--interactive", action="store_true")
     argparser.add_argument("--num-games", type=int, dest="num_games",
-                           help="Number of games to play if not interactive (default=1000)",
-                           default=1000)
-    argparser.add_argument("--embeddings_file", type=str, dest="embeddings_file", default="data/uk_embeddings.txt")
+                           help="Number of games to play if 'game-data' is not specified (default=1000)", required=False)
+    argparser.add_argument("--game-data", type=str, default="data/codenames_dev.games")
+    argparser.add_argument("--guesser-embeddings-file", type=str, dest="guesser_embeddings_file",
+                           default="data/uk_embeddings.txt")
+    argparser.add_argument("--giver-embeddings-file", type=str, dest="giver_embeddings_file",
+                           default="data/uk_embeddings.txt")
     argparser.add_argument("--load-model", dest="load_model", default=None)
+    argparser.add_argument("--experiment-name", type=str, default="debug")
+    argparser.add_argument("--verbose", action="store_true")
     args = argparser.parse_args()
     main(args)
