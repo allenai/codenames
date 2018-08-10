@@ -218,7 +218,7 @@ def play_game(board_size=5, giver_type="heuristic", guesser_type="heuristic", bo
     while not game.is_game_over():
         if turn == 1: 
             game.engine.print_board(spymaster=True, verbose=verbose)
-        _input('||| press ENTER to see the next clue for team1.', verbose=verbose)
+        _input('\n||| press ENTER to see the next clue for team1.', verbose=verbose)
 
         # get a list of clues.
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
@@ -235,11 +235,13 @@ def play_game(board_size=5, giver_type="heuristic", guesser_type="heuristic", bo
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
-        _print("||| team1's clue: ({}, {}).\t".format(clue.clue_word, clue.count), verbose=verbose)
+        _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
-        _print(', press ENTER to see team1 guesses.\n', verbose=verbose)
+        _input(', press ENTER to see team1 guesses.\n', verbose=verbose)
 
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
+        _print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))),
+               verbose=verbose)
         guesser.report_reward(guess_list_rewards)
         turn += 1
 
