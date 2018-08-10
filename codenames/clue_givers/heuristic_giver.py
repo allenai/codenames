@@ -1,4 +1,3 @@
-from gensim.models import KeyedVectors
 from itertools import combinations, chain
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.clue_givers.giver import Giver
@@ -14,7 +13,8 @@ class HeuristicGiver(Giver):
     def __init__(self, board: [str],
                  allIDs: List[int],
                  embeddinghandler: EmbeddingHandler,
-                 NUM_CLUES: int=50):
+                 NUM_CLUES: int=5,
+               ):
         super().__init__(board, allIDs)
         self.assassin = [board[idx] for idx, val in enumerate(allIDs) if val == 0]
         self.pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
@@ -28,19 +28,15 @@ class HeuristicGiver(Giver):
         clues = []
         count = len(group)
 
-        clue_indices = [self.embedding_handler.vocab[word].index for word in group]
-        clue_vectors = self.embedding_handler.syn0[clue_indices]
-        neg_indices = [self.embedding_handler.vocab[word].index for word in neg_words]
-        neg_vectors = self.embedding_handler.syn0[neg_indices]
-        civilian_indices = [self.embedding_handler.vocab[word].index for word in civilians]
-        civilian_vectors = self.embedding_handler.syn0[civilian_indices]
-        assassin_indices = [self.embedding_handler.vocab[word].index for word in assassin]
-        assassin_vectors = self.embedding_handler.syn0[assassin_indices]
+        clue_vectors = self.embedding_handler.embed_words_list(group)
+        neg_vectors = self.embedding_handler.embed_words_list(neg_words)
+        civilian_vectors = self.embedding_handler.embed_words_list(civilians)
+        assassin_vectors = self.embedding_handler.embed_words_list(assassin)
         
-        mean_vector = clue_vectors.mean(axis=0)
+        mean_vector = np.mean(clue_vectors,axis=0)
         mean_vector /= np.sqrt(mean_vector.dot(mean_vector))
 
-        cosines = cosine_similarity(self.embedding_handler.syn0, mean_vector.reshape(1,-1)).flatten()
+        cosines = cosine_similarity(self.embedding_handler.embedding_weights, mean_vector.reshape(1,-1)).flatten()
         closest = np.argsort(cosines)[::-1]
         civilian_penalty = .05
         assassin_penalty = .08
@@ -56,10 +52,10 @@ class HeuristicGiver(Giver):
         for i in range(NUM_CLUES):
             clue = None
             clue_index = closest[i]
-            clue = self.embedding_handler.index2word[clue_index]
-            if clue.lower() in group:
+            clue = self.embedding_handler.index_to_word[clue_index].lower()
+            if clue in group:
                 continue
-            clue_vector = self.embedding_handler.syn0[clue_index].reshape(1,-1)
+            clue_vector = self.embedding_handler.get_embedding_by_index(clue_index).reshape(1,-1)
             clue_cosine = cosine_similarity(clue_vectors, clue_vector).flatten()
             min_clue_cosine = np.min(clue_cosine) + multigroup_penalty
 
@@ -93,6 +89,8 @@ class HeuristicGiver(Giver):
     '''List of Clues sorted by descending Cosine distance'''
     def get_next_clue(self, game_state: List[int],
                       score: int):
+
+
         available_targets = [word for word in self.pos_words if game_state[self.board.tolist().index(word)] == -1]
         available_civilians = [word for word in self.civilians if game_state[self.board.tolist().index(word)] == -1]
         available_neg_words = [word for word in self.neg_words if game_state[self.board.tolist().index(word)] == -1]
@@ -109,9 +107,8 @@ class HeuristicGiver(Giver):
         num_words = len(available_targets)
         for count in range(num_words, 0, -1):
             for group in combinations(range(num_words),count):
-                logging.info(group, self.neg_words)
                 target_group = [available_targets[i] for i in group]
-                all_clues.append(self._get_clues(available_targets, available_assassins, available_neg_words, available_civilians, aggressive, self.NUM_CLUES))
+                all_clues.append(self._get_clues(target_group, available_assassins, available_neg_words, available_civilians, aggressive, self.NUM_CLUES))
         all_clues = list(chain.from_iterable(all_clues))
         all_clues.sort(key=operator.itemgetter(1),reverse=True)
         all_clues = self._unique_clues(all_clues)
@@ -119,12 +116,13 @@ class HeuristicGiver(Giver):
         return all_clues
 
 
-def main():
-    test_embed = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
-    test_board = ["water", "notebook", "board", "boy", "shoe", "cat", "pear", "sandwich","chair","pants","phone","internet"]
-    test_allIDs = [1, 2, 2, 1, 3, 1, 2, 3,1,1,0,1]
-    cg = HeuristicGiver(test_board, test_allIDs, test_embed)
-
-
-if __name__ == "__main__":
-    main()
+# def main():
+#     test_embed = EmbeddingHandler('/home/nikita/Downloads/codenames/data/uk_embeddings.txt')
+#     #print(test_embed.index_to_word[42614])
+#     test_board = ["water", "notebook", "board", "boy", "shoe", "cat", "pear", "sandwich","chair","pants","phone","internet"]
+#     test_allIDs = [1, 2, 2, 1, 3, 1, 2, 3,1,1,0,1]
+#     cg = HeuristicGiver(test_board, test_allIDs, test_embed)
+#     for i in cg.get_next_clue([-1,-1,-1,0,0,-1,0,0,0,-1,0,-1],3): print(i)
+#
+# if __name__ == "__main__":
+#     main()
