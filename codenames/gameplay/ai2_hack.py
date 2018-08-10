@@ -302,8 +302,8 @@ def main(args):
                     sys.stdout.write('WARNING: skipping game data |||{}||| due to a conflict with the specified board size: {}'.format(line, args.board_size))
                 continue
             all_game_data.append(line.strip())
-            all_game_data = all_game_data[:args.num_games]
-            sys.stdout.write("Loaded {} games".format(args.num_games))
+        all_game_data = all_game_data[:args.num_games]
+        sys.stdout.write("Loaded {} games".format(args.num_games))
     else:
         # If game data were not specified, we'd like to generate (args.num_games) random 
         # games. The method `play_game` randomly samples words when the provided game data
