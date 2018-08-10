@@ -6,7 +6,7 @@ from termcolor import colored
 import argparse
 
 from codenames.clue_givers.giver import Giver, Clue
-from codenames.clue_givers.heuristicgiver import HeuristicGiver
+from codenames.clue_givers.heuristic_giver import HeuristicGiver
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 from codenames.guessers.heuristic_guesser import HeuristicGuesser
@@ -14,7 +14,6 @@ from codenames.guessers.learned_guesser import LearnedGuesser
 from codenames.guessers.policy.similarity_threshold import SimilarityThresholdPolicy
 from codenames.utils.game_utils import UNREVEALED, ASSASSIN, GOOD, BAD, Clue
 from codenames.gameplay.engine import GameEngine
-import logging
 
 SCORE_CORRECT_GUESS = 1
 SCORE_INCORRECT_GUESS = -1
@@ -26,10 +25,10 @@ class GameWrapper:
 
     def __init__(self, board_size, board_data=None):
         '''
-    board_size: int, number of board_words = board_size * board_size
-    board_data: string, format as: ASSASSIN;TEAM1;TEAM2;NEUTRAL
-    where each group consists of comma-separated words from the word list.
-    '''
+        board_size: int, number of board_words = board_size * board_size
+        board_data: string, format as: ASSASSIN;TEAM1;TEAM2;NEUTRAL
+        where each group consists of comma-separated words from the word list.
+        '''
         self.engine = GameEngine()
         # initialize board data.
         if board_data == None:
@@ -140,17 +139,16 @@ class GameWrapper:
 
 class RandomGiver(Giver):
     '''
-  A clue giver who randomly picks the clue word from a vocabulary.
-  '''
+    A clue giver who randomly picks the clue word from a vocabulary.
+    '''
+    def __init__(self, embedding_handler):
+        self.vocab = list(embedding_handler.word_indices.keys())
 
-    def __init__(self, board: List[str], target_IDs: List[int],
-                 vocab=None):
-        super().__init__(board, target_IDs)
-        if vocab is None:
-            vocab = ['I', 'have', 'no', 'clue', 'what', 'I', 'am', 'doing']
-        self.vocab = vocab
-
-    def get_next_clue(self, game_state, score, black_list=None):
+    def get_next_clue(self,
+                      board,
+                      allIDs,
+                      game_state,
+                      score):
         options = choices(self.vocab, k=3)
         clues = []
         for option in options:
@@ -160,18 +158,13 @@ class RandomGiver(Giver):
 
 class RandomGuesser(Guesser):
     '''
-  A guesser who randomly picks among unrevealed board words.
-  '''
-
-    def __init__(self, board: List[str]):
-        super().__init__(board)
-        self.board = board
-
-    def guess(self, clue_word, count, game_state, cumulative_score):
+    A guesser who randomly picks among unrevealed board words.
+    '''
+    def guess(self, board, clue_word, count, game_state, cumulative_score):
         unrevealed_words = []
         for i in range(len(game_state)):
             if game_state[i] == -1:
-                unrevealed_words.append(self.board[i])
+                unrevealed_words.append(board[i])
         return choices(unrevealed_words, k=count + 1)
 
     def report_reward(self, reward):
@@ -187,31 +180,9 @@ def _input(message, verbose):
     else:
         return ''
 
-def play_game(board_size=5, giver_type="heuristic", guesser_type="heuristic", board_data=None,
-              verbose=True):
+def play_game(giver, guesser, board_size=5, board_data=None, verbose=True):
     _print('||| initializing all modules.\n', verbose=verbose)
     game = GameWrapper(board_size, board_data)
-
-    embedding_handler = EmbeddingHandler('data/uk_embeddings.txt')
-
-    if giver_type == "heuristic":
-        giver = HeuristicGiver(game.engine.board, game.engine.owner, embedding_handler)
-    elif giver_type == "random":
-        giver = RandomGiver(game.engine.board, game.engine.owner)
-    else:
-        raise NotImplementedError
-
-    if guesser_type == "heuristic":
-        guesser = HeuristicGuesser(game.engine.board, embedding_handler)
-    elif guesser_type == "random":
-        guesser = RandomGuesser(game.engine.board)
-    elif guesser_type == "learned":
-        guesser = LearnedGuesser(game.engine.board, embedding_handler,
-                                 policy=SimilarityThresholdPolicy(300),
-                                 learning_rate=0.01)
-    else:
-        raise NotImplementedError
-
     _print('||| data: {}.\n'.format(list(zip(game.engine.board, game.engine.owner))), verbose=verbose)
 
     turn = 1
@@ -221,7 +192,11 @@ def play_game(board_size=5, giver_type="heuristic", guesser_type="heuristic", bo
         _input('\n||| press ENTER to see the next clue for team1.', verbose=verbose)
 
         # get a list of clues.
-        clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
+        board = game.engine.board.tolist()
+        clue_objects = giver.get_next_clue(board,
+                                           game.engine.owner,
+                                           game.game_state,
+                                           game.cumulative_score)
         assert len(clue_objects) > 0
         # find the first legal clue, then proceed.
         first_valid_clue = None
@@ -236,7 +211,11 @@ def play_game(board_size=5, giver_type="heuristic", guesser_type="heuristic", bo
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
         _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
-        guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
+        guessed_words = guesser.guess(game.engine.board,
+                                      clue_word,
+                                      clue_count,
+                                      game.game_state,
+                                      game.cumulative_score)
         _input(', press ENTER to see team1 guesses.\n', verbose=verbose)
 
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
@@ -247,17 +226,54 @@ def play_game(board_size=5, giver_type="heuristic", guesser_type="heuristic", bo
 
     _print('\n||| termination condition: {}\n'.format(game.result), verbose=verbose)
     _print('|||\n', verbose=verbose)
-    _print('||| =============== GAME OVER =================', verbose=verbose)
+    _print('||| =============== GAME OVER =================\n', verbose=verbose)
     _print('||| =============== team1 score: {}\n'.format(game.cumulative_score), verbose=verbose)
+    return game.cumulative_score
 
 def main(args):
-    play_game(giver_type=args.giver_type, guesser_type=args.guesser_type,
-              board_size=args.board_size, verbose=True)
+    embedding_handler = EmbeddingHandler('data/uk_embeddings.txt')
+    if args.giver_type == "heuristic":
+        giver = HeuristicGiver(embedding_handler)
+    elif args.giver_type == "random":
+        giver = RandomGiver(embedding_handler)
+    else:
+        raise NotImplementedError
+
+    if args.guesser_type == "heuristic":
+        guesser = HeuristicGuesser(embedding_handler)
+    elif args.guesser_type == "random":
+        guesser = RandomGuesser()
+    elif args.guesser_type == "learned":
+        guesser = LearnedGuesser(embedding_handler,
+                                 policy=SimilarityThresholdPolicy(300),
+                                 learning_rate=0.01)
+    else:
+        raise NotImplementedError
+    if args.interactive:
+        play_game(giver=giver, guesser=guesser,
+                  board_size=args.board_size, verbose=True)
+    else:
+        scores = []
+        num_wins = 0
+        for _ in range(args.num_games):
+            score = play_game(giver=giver, guesser=guesser,
+                              board_size=args.board_size, verbose=False)
+            if score > 0:
+                num_wins += 1
+            scores.append(score)
+        mean_score = sum(scores)/len(scores)
+        print(f"Played {args.num_games} games.")
+        print(f"Team 1 won {num_wins} times.")
+        print(f"Average score is {mean_score}")
 
 if __name__== "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--guesser", type=str, dest="guesser_type", default="heuristic")
     argparser.add_argument("--giver", type=str, dest="giver_type", default="heuristic")
     argparser.add_argument("--size", type=int, dest="board_size", default="5")
+    argparser.add_argument("--interactive", action="store_true")
+    argparser.add_argument("--num-games", type=int, dest="num_games",
+                           help="Number of games to play if not interactive (default=1000)",
+                           default=1000)
     args = argparser.parse_args()
     main(args)
