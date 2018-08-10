@@ -14,9 +14,7 @@ class LearnedGuesser(Guesser):
     def __init__(self,
                  embedding_handler: EmbeddingHandler,
                  policy: GuesserPolicy,
-
-                 learning_rate: float,
-                 load_model: str="") -> None:
+                 learning_rate: float) -> None:
         self.policy = policy
         self.guess_history = None
         self.guess_log_probs = None
@@ -86,7 +84,7 @@ class LearnedGuesser(Guesser):
     '''
     def report_reward(self,
                       rewards: List[int],
-                      save: str="") -> None:
+                      save: str=None) -> None:
         if self.guess_log_probs is None:
             raise RuntimeError("Haven't made any guesses yet!")
         loss = torch.mul(torch.sum(torch.mul(torch.Tensor(rewards),
@@ -94,5 +92,5 @@ class LearnedGuesser(Guesser):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        if save != "":
+        if save:
             torch.save(self.policy, save)
