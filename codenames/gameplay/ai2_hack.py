@@ -197,6 +197,8 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
     while not game.is_game_over():
         if turn == 1:
             game.engine.print_board(spymaster=True, verbose=verbose)
+        else:
+            game.engine.print_board(spymaster=True, verbose=verbose, clear_screen=False)
         _input('\n||| press ENTER to see the next clue for team1.', verbose=verbose)
 
         # get a list of clues.
@@ -236,7 +238,7 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
             if r < SCORE_CORRECT_GUESS:
                 break
             rewards_out.append((w, r))
-        _print('||| rewards: {}'.format(rewards_out), verbose=verbose)
+        _print('||| rewards: {}\n'.format(rewards_out), verbose=verbose)
         if saved_path and game.is_game_over():
             guesser.report_reward(guess_list_rewards, saved_path)
         else:
