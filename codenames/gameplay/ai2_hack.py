@@ -345,7 +345,7 @@ def main(args):
     all_turns = []
     num_positive_score = 0
     start_time = datetime.datetime.now()
-    for i, board_data in tqdm.tqdm(enumerate(all_game_data), desc="games played: "):
+    for i, board_data in enumerate(all_game_data):
         saved_path = ""
         save_now = i % 100
         if args.num_games is not None:
