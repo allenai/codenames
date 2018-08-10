@@ -15,15 +15,14 @@ class WordnetClueGiver(Giver):
     '''
     Clue giver is initialized with the board and the IDs of cards
     '''
-    def __init__(self, board: [str],
-                 allIDs: List[int],
+    def __init__(self,
                  NUM_CLUES: int=10):
-        self.board = board
-        super().__init__(board, allIDs)
+        #self.board = board
+        super().__init__()#board, allIDs)
         #positive words
-        self.pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
+        #self.pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
         #negative words
-        self.neg_words = [word for word in board if word not in self.pos_words]
+       # self.neg_words = [word for word in board if word not in self.pos_words]
         #minimum number of clues we want our get_clues method to generate
         self.NUM_CLUES = NUM_CLUES
 
@@ -172,13 +171,18 @@ class WordnetClueGiver(Giver):
     Returns:
         all_clues, a list of Clue type.
     '''
-    def get_next_clue(self, game_state: List[int],
+    def get_next_clue(self, board: List[str],
+                      allIDs: List[int],
+                      game_state: List[int],
                       score: int,
                       epsilon: float=-1.0):
-        logging.info(self.pos_words)
-        logging.info(self.neg_words)
-        available_targets = [word for word in self.pos_words if game_state[self.board.index(word)] != -1]
-        active_neg_words = [word for word in self.neg_words if game_state[self.board.index(word)] != -1]
+
+        pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
+        # negative words
+        neg_words = [word for word in board if word not in self.pos_words]
+
+        available_targets = [word for word in pos_words if game_state[self.board.index(word)] != -1]
+        active_neg_words = [word for word in neg_words if game_state[self.board.index(word)] != -1]
         logging.info(available_targets)
 
         #scales epsilon based on score
