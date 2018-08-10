@@ -39,11 +39,15 @@ class WordnetClueGiver(Giver):
             Default = 0.8
     '''
 
-    def _get_clues(self, group, neg_words, epsilon=0.8):
+    def _get_clues(self, group, neg_words, epsilon=0.8, safe_play=True):
         clues = []
 
-        #num starts off trying to give a hint for all positive words then moves down
-        num = len(group)
+        if safe_play:
+            # to play safe, just target one word at a time
+            num = 1
+        else:
+            #num starts off trying to give a hint for all positive words then moves down
+            num = len(group)
 
         #potential permutations of positive cards of size num
         potentials = list(permutations(group, num))
@@ -141,7 +145,7 @@ class WordnetClueGiver(Giver):
                         #filters out multi-words
                         if "_" not in lemma.name() and lemma.name() not in group:
                             #appends clue along with normalized score
-                            clues.append((Clue(lemma.name(), pot_clue_group, num), float(np.sum(clue_scorer[clue])) / float(len(clue_scorer[clue]))))
+                            clues.append((Clue(lemma.name(), pot_clue_group, num-1), float(np.sum(clue_scorer[clue])) / float(len(clue_scorer[clue]))))
 
             #advances to the next group of num words
             place_in_potentials += 1
@@ -183,8 +187,8 @@ class WordnetClueGiver(Giver):
         # negative words
         neg_words = [board[idx] for idx, val in enumerate(allIDs) if val != 1]
 
-        available_targets = [word for word in pos_words if game_state[board.index(word)] != -1]
-        active_neg_words = [word for word in neg_words if game_state[board.index(word)] != -1]
+        available_targets = [word for word in pos_words if game_state[board.index(word)] == -1]
+        active_neg_words = [word for word in neg_words if game_state[board.index(word)] == -1]
         logging.info(available_targets)
 
         #scales epsilon based on score

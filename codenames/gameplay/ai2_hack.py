@@ -231,9 +231,7 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
-        _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
-        _print("||| \tIntended target words: [{}]\n".format(', '.join(clue.intended_board_words)),
-               verbose=verbose)
+        _print("||| team1's clue: ({}, {}); \tIntended target words: [{}]\n".format(clue.clue_word, clue.count, clue.intended_board_words), verbose=verbose)
 
         guessed_words = guesser.guess(game.engine.board,
                                       clue_word,
@@ -257,7 +255,7 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
 
         # print the board after team1 plays this turn.
         game.engine.print_board(spymaster=True, verbose=verbose)
-        _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
+        _print("||| team1's clue: ({}, {}); \tIntended target words: [{}]\n".format(clue.clue_word, clue.count, clue.intended_board_words), verbose=verbose)
         _print("||| team1's guesses: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
         if not game.is_game_over():
             _input(", press ENTER to see team2's next move.", verbose=verbose)
