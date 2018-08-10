@@ -59,6 +59,10 @@ class LearnedGuesser(Guesser):
                                         torch.Tensor(option_vectors))
 
         distribution = Categorical(policy_output)
+        #print(distribution.probs)
+        #import math
+        #if math.isnan(distribution.probs[0]):
+        #    return []
         predictions = distribution.sample(torch.Size((count,)))
 
         # Return guesses
@@ -73,10 +77,12 @@ class LearnedGuesser(Guesser):
         for guess, log_prob in zip(guesses, log_probs):
             if not guess in seen_guesses:
                 unique_guesses.append(guess)
-                unique_guesses_log_probs.append(log_prob)
+                unique_guesses_log_probs.append(log_prob + 0.001)
                 seen_guesses.add(guess)
         self.guess_history = unique_guesses
         self.guess_log_probs = unique_guesses_log_probs
+        if unique_guesses == []:
+            import pdb; pdb.set_trace()
         return unique_guesses
 
     '''
@@ -87,10 +93,14 @@ class LearnedGuesser(Guesser):
                       save: str=None) -> None:
         if self.guess_log_probs is None:
             raise RuntimeError("Haven't made any guesses yet!")
+
         loss = torch.mul(torch.sum(torch.mul(torch.Tensor(rewards),
                                              torch.stack(self.guess_log_probs))), -1)
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+        if loss.item() != 0:
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+        else:
+            import pdb; pdb.set_trace()
         if save:
             torch.save(self.policy, save)
