@@ -211,6 +211,9 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True):
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
         _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
+        _print("||| \tIntended target words: [{}]\n".format(', '.join(clue.intended_board_words)),
+               verbose=verbose)
+
         guessed_words = guesser.guess(game.engine.board,
                                       clue_word,
                                       clue_count,
@@ -268,6 +271,7 @@ def main(args):
         print(f"Played {args.num_games} games.")
         print(f"Team 1 won {num_wins} times.")
         print(f"Average score is {mean_score}")
+
 
 if __name__== "__main__":
     argparser = argparse.ArgumentParser()
