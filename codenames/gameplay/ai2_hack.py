@@ -350,8 +350,6 @@ def main(args):
         saved_path = ""
         save_now = (i % 100 == 0) or (i == args.num_games - 1)
         if args.guesser_type.startswith("learned") and save_now:
-            import pdb
-            pdb.set_trace()
             if not os.path.exists("./models"):
                 os.makedirs("./models")
             saved_path = "./models/learned" + str(i)
