@@ -3,6 +3,7 @@ import sys
 from random import choices, shuffle
 from typing import List
 from termcolor import colored
+import argparse
 
 from codenames.clue_givers.giver import Giver, Clue
 from codenames.clue_givers.heuristicgiver import HeuristicGiver
@@ -186,11 +187,30 @@ def _input(message, verbose):
     else:
         return ''
 
-def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=None, verbose=True):
+def play_game(board_size=5, giver_type="heuristic", guesser_type="heuristic", board_data=None,
+              verbose=True):
     _print('||| initializing all modules.\n', verbose=verbose)
     game = GameWrapper(board_size, board_data)
-    giver = RandomGiver(game.engine.board, game.engine.owner)
-    guesser = RandomGuesser(game.engine.board)
+
+    embedding_handler = EmbeddingHandler('data/uk_embeddings.txt')
+
+    if giver_type == "heuristic":
+        giver = HeuristicGiver(game.engine.board, game.engine.owner, embedding_handler)
+    elif giver_type == "random":
+        giver = RandomGiver(game.engine.board, game.engine.owner)
+    else:
+        raise NotImplementedError
+
+    if guesser_type == "heuristic":
+        guesser = HeuristicGuesser(game.engine.board, embedding_handler)
+    elif guesser_type == "random":
+        guesser = RandomGuesser(game.engine.board)
+    elif guesser_type == "learned":
+        guesser = LearnedGuesser(game.engine.board, embedding_handler,
+                                 policy=SimilarityThresholdPolicy(300),
+                                 learning_rate=0.01)
+    else:
+        raise NotImplementedError
 
     _print('||| data: {}.\n'.format(list(zip(game.engine.board, game.engine.owner))), verbose=verbose)
 
@@ -198,7 +218,7 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
     while not game.is_game_over():
         if turn == 1: 
             game.engine.print_board(spymaster=True, verbose=verbose)
-        _input('||| press ENTER to see the next clue for team1.', verbose=verbose)
+        _input('\n||| press ENTER to see the next clue for team1.', verbose=verbose)
 
         # get a list of clues.
         clue_objects = giver.get_next_clue(game.game_state, game.cumulative_score)
@@ -215,11 +235,13 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
-        _print("||| team1's clue: ({}, {}).\t".format(clue.clue_word, clue.count), verbose=verbose)
+        _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
         guessed_words = guesser.guess(clue_word, clue_count, game.game_state, game.cumulative_score)
-        _print(', press ENTER to see team1 guesses.\n', verbose=verbose)
+        _input(', press ENTER to see team1 guesses.\n', verbose=verbose)
 
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
+        _print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))),
+               verbose=verbose)
         guesser.report_reward(guess_list_rewards)
         turn += 1
 
@@ -228,9 +250,14 @@ def play_game(board_size=5, giver_options=[], guesser_options=[], board_data=Non
     _print('||| =============== GAME OVER =================', verbose=verbose)
     _print('||| =============== team1 score: {}\n'.format(game.cumulative_score), verbose=verbose)
 
-def main():
-    play_game(verbose=True)
-  
+def main(args):
+    play_game(giver_type=args.giver_type, guesser_type=args.guesser_type,
+              board_size=args.board_size, verbose=True)
 
 if __name__== "__main__":
-    main()
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--guesser", type=str, dest="guesser_type", default="heuristic")
+    argparser.add_argument("--giver", type=str, dest="giver_type", default="heuristic")
+    argparser.add_argument("--size", type=int, dest="board_size", default="5")
+    args = argparser.parse_args()
+    main(args)

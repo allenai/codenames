@@ -176,7 +176,7 @@ class GameEngine(object):
                     word = word.upper()
 
                 # format cell content
-                cell = '{:^11} '.format(word.decode('utf8'))
+                cell = '{:^11} '.format(word)
                 if background_color:
                     cell = colored(cell, foreground_color, background_color, attrs = attrs)
                 else:
