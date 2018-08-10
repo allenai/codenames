@@ -97,7 +97,6 @@ class HeuristicGiver(Giver):
         available_civilians = [word for word in self.civilians if game_state[self.board.index(word)] == -1]
         available_neg_words = [word for word in self.neg_words if game_state[self.board.index(word)] == -1]
         available_assassins = [word for word in self.assassin if game_state[self.board.index(word)] == -1]
-        print(available_assassins,available_neg_words,available_civilians,available_targets)
         num_revealed = 0
         for idx, value in enumerate(game_state):
             if value == -1:
@@ -120,14 +119,12 @@ class HeuristicGiver(Giver):
         return all_clues
 
 
-# def main():
-#     test_embed = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
-#     test_board = ["water", "notebook", "board", "boy", "shoe", "cat", "pear", "sandwich","chair","pants","phone","internet"]
-#     test_allIDs = [1, 2, 2, 1, 3, 1, 2, 3,1,1,0,1]
-#     cg = HeuristicGiver(test_board, test_allIDs, test_embed)
-#     cg.get_next_clue([-1,-1,-1,-1,-1,0,0,0,-1,-1,-1,-1], 1)
-#
-#
-#
-# if __name__ == "__main__":
-#     main()
+def main():
+    test_embed = KeyedVectors.load_word2vec_format('~/Downloads/GoogleNews-vectors-negative300-SLIM.bin',binary=True)
+    test_board = ["water", "notebook", "board", "boy", "shoe", "cat", "pear", "sandwich","chair","pants","phone","internet"]
+    test_allIDs = [1, 2, 2, 1, 3, 1, 2, 3,1,1,0,1]
+    cg = HeuristicGiver(test_board, test_allIDs, test_embed)
+
+
+if __name__ == "__main__":
+    main()
