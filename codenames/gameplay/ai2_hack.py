@@ -182,7 +182,7 @@ def _input(message, verbose):
     else:
         return ''
 
-def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, save=""):
+def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved_path=None):
     _print('||| initializing all modules.\n', verbose=verbose)
     game = GameWrapper(board_size, board_data)
     _print('||| data: {}.\n'.format(list(zip(game.engine.board, game.engine.owner))), verbose=verbose)
@@ -223,8 +223,8 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, save=
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
         _print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))),
                verbose=verbose)
-        if save != "" and game.is_game_over():
-            guesser.report_reward(guess_list_rewards, save)
+        if saved_path and game.is_game_over():
+            guesser.report_reward(guess_list_rewards, saved_path)
         else:
             guesser.report_reward(guess_list_rewards)
         turn += 1
@@ -274,7 +274,7 @@ def main(args):
 
             score = play_game(giver=giver, guesser=guesser,
                               board_size=args.board_size, verbose=False,
-                              save=saved_path)
+                              saved_path=saved_path)
             if score > 0:
                 num_wins += 1
             scores.append(score)
