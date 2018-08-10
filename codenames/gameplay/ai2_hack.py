@@ -317,20 +317,24 @@ def main(args):
         if args.load_model:
             guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=torch.load(args.load_model),
-                                     learning_rate=0.01)
+                                     learning_rate=0.01,
+                                     train=False)
         else:
             guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=SimilarityThresholdPolicy(300),
-                                     learning_rate=0.01)
+                                     learning_rate=0.01,
+                                     train=True)
     elif args.guesser_type == "learnedstate":
         if args.load_model:
             guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=torch.load(args.load_model),
-                                     learning_rate=0.01)
+                                     learning_rate=0.01,
+                                     train=False)
         else:
             guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=SimilarityThresholdGameStatePolicy(300),
-                                     learning_rate=0.01)
+                                     learning_rate=0.01,
+                                     train=True)
     else:
         raise NotImplementedError
     
@@ -342,7 +346,10 @@ def main(args):
     start_time = datetime.datetime.now()
     for i, board_data in tqdm.tqdm(enumerate(all_game_data), desc="games played: "):
         saved_path = ""
-        if args.guesser_type == "learned" and (i % 100 == 0 or i == args.num_games - 1):
+        save_now = i % 100
+        if args.num_games is not None:
+            save_now = save_now or i == args.num_games - 1
+        if args.guesser_type == "learned" and save_now:
             if not os.path.exists("./models"):
                 os.makedirs("./models")
             saved_path = "./models/learned" + str(i)
@@ -392,14 +399,14 @@ if __name__ == "__main__":
     argparser.add_argument("--giver", type=str, dest="giver_type", default="heuristic")
     argparser.add_argument("--size", type=int, dest="board_size", default="5")
     argparser.add_argument("--interactive", action="store_true")
-    argparser.add_argument("--num-games", type=int, dest="num_games",
-                           help="Number of games to play if 'game-data' is not specified (default=1000)", required=False)
+    argparser.add_argument("--num-games", type=int, help="Number of games to play")
     argparser.add_argument("--game-data", type=str, default="data/codenames_dev.games")
     argparser.add_argument("--guesser-embeddings-file", type=str, dest="guesser_embeddings_file",
                            default="data/uk_embeddings.txt")
     argparser.add_argument("--giver-embeddings-file", type=str, dest="giver_embeddings_file",
                            default="data/uk_embeddings.txt")
-    argparser.add_argument("--load-model", dest="load_model", default=None)
+    argparser.add_argument("--load-model", dest="load_model", default=None,
+                           help="Will not train if this argument is set.")
     argparser.add_argument("--experiment-name", type=str, default="debug")
     argparser.add_argument("--verbose", action="store_true")
     args = argparser.parse_args()
