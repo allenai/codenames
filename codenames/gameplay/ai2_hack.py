@@ -348,7 +348,7 @@ def main(args):
     start_time = datetime.datetime.now()
     for i, board_data in tqdm.tqdm(enumerate(all_game_data)):
         saved_path = ""
-        save_now = (i % 10 == 0) or (i == args.num_games - 1)
+        save_now = (i % 100 == 0) or (i == args.num_games - 1)
         import pdb
         pdb.set_trace()
         if args.guesser_type.startswith("learned") and save_now:
