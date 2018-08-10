@@ -7,10 +7,8 @@ class Giver:
     ----------
     board : `List[str]`
         List of all words on the board in the current game
-    target_IDs: `List[str]`
-        List of all target words the Giver wants the Guesser to guess correctly
-    embedding_file : `str`
-        Location of pickled embeddings
+    allIDs: `List[int]`
+        List of assignment codes for all words on the board
     """
 
     def __init__(self,
@@ -26,8 +24,7 @@ class Giver:
         Parameters
         ----------
         game_state : `List[int]`
-            List of same size as self.board, with each element showing the ids revealed so far (eg.
-            same team, opposite team, assasin, civilian etc.)
+            List of same size as self.board telling whether a word on board is already revealed
         score : `int`
             Current score
         """
