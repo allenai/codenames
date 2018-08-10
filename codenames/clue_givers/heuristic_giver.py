@@ -17,9 +17,6 @@ class HeuristicGiver(Giver):
                  embedding_handler: EmbeddingHandler):
         self.embedding_handler = embedding_handler
 
-    def _cosine(self, w1, w2):
-        return 
-
     ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
     def _get_clues(self, pos_words_subset, neg_words, civ_words, ass_words, aggressive, num_clues=DEFAULT_NUM_CLUES,MULTIGROUP_PENALTY=MULTIGROUP_PENALTY):
         clues = []
