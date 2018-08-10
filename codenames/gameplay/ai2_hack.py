@@ -197,7 +197,6 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True):
                                            game.engine.owner,
                                            game.game_state,
                                            game.cumulative_score)
-        assert len(clue_objects) > 0
         # find the first legal clue, then proceed.
         first_valid_clue = None
         for clue in clue_objects:
@@ -206,7 +205,8 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True):
                 break
 
         if first_valid_clue is None:
-            raise RuntimeError('All clues given were illegal.')
+            # All clues are illegal. Abandoning game!
+            break
 
         clue_word, clue_count = first_valid_clue.clue_word, first_valid_clue.count
         # get guesses.
@@ -228,7 +228,10 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True):
     _print('|||\n', verbose=verbose)
     _print('||| =============== GAME OVER =================\n', verbose=verbose)
     _print('||| =============== team1 score: {}\n'.format(game.cumulative_score), verbose=verbose)
-    return game.cumulative_score
+    # If game.result is None, it means that the giver could not give a clue, and the game was
+    # abandoned.
+    score = game.cumulative_score if game.result is not None else 0
+    return score
 
 def main(args):
     embedding_handler = EmbeddingHandler('data/uk_embeddings.txt')
