@@ -111,7 +111,7 @@ class HeuristicGiver(Giver):
             for group in combinations(range(num_words),count):
                 logging.info(group, self.neg_words)
                 target_group = [available_targets[i] for i in group]
-                all_clues.append(self._get_clues(target_group, available_assassins, available_neg_words, available_civilians, aggressive, self.NUM_CLUES))
+                all_clues.append(self._get_clues(available_targets, available_assassins, available_neg_words, available_civilians, aggressive, self.NUM_CLUES))
         all_clues = list(chain.from_iterable(all_clues))
         all_clues.sort(key=operator.itemgetter(1),reverse=True)
         all_clues = self._unique_clues(all_clues)
