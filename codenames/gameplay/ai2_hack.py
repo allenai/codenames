@@ -303,7 +303,8 @@ def main(args):
                 continue
             all_game_data.append(line.strip())
         all_game_data = all_game_data[:args.num_games]
-        print("Loaded {} games".format(args.num_games))
+        if args.verbose:
+            sys.stdout.write("Loaded {} games".format(args.num_games))
     else:
         # If game data were not specified, we'd like to generate (args.num_games) random 
         # games. The method `play_game` randomly samples words when the provided game data
@@ -345,7 +346,6 @@ def main(args):
     all_turns = []
     num_positive_score = 0
     start_time = datetime.datetime.now()
-    print("start playing!!")
     for i, board_data in tqdm.tqdm(enumerate(all_game_data)):
         saved_path = ""
         save_now = i % 100
