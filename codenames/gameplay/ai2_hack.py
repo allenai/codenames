@@ -355,6 +355,8 @@ def main(args):
                 os.makedirs("./models")
             saved_path = "./models/learned" + str(i)
 
+        print("Game {}".format(i))
+
         score, termination_condition, turns = play_game(giver=giver, guesser=guesser,
                                                         board_size=args.board_size, 
                                                         board_data=board_data,
