@@ -249,11 +249,6 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
             rewards_out.append((w, r))
         _print('||| rewards: {}\n'.format(rewards_out), verbose=verbose)
 
-        if saved_path and game.is_game_over():
-            guesser.report_reward(guess_list_rewards, saved_path)
-        else:
-            guesser.report_reward(guess_list_rewards)
-
         # print the board after team1 plays this turn.
         game.engine.print_board(spymaster=True, verbose=verbose)
         _print("||| team1's clue: ({}, {}); \tIntended target words: [{}]\n".format(clue.clue_word, clue.count, clue.intended_board_words), verbose=verbose)
@@ -266,6 +261,11 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
             _print("||| team1's clue: ({}, {}).\n".format(clue.clue_word, clue.count), verbose=verbose)
             _print("||| team1's guess: {}\n".format(list(zip(guessed_words, guess_list_rewards))), verbose=verbose)
             _print("||| team2 revealed: {}\n".format(team2_guessed_words), verbose=verbose)
+
+        if saved_path and game.is_game_over():
+            guesser.report_reward(guess_list_rewards, saved_path)
+        else:
+            guesser.report_reward(guess_list_rewards)
 
         turn += 1
 
