@@ -346,7 +346,7 @@ def main(args):
     num_positive_score = 0
     start_time = datetime.datetime.now()
     print("start playing!!")
-    for i, board_data in enumerate(all_game_data):
+    for i, board_data in tqdm.tqdm(enumerate(all_game_data)):
         saved_path = ""
         save_now = i % 100
         if args.num_games is not None:
@@ -355,8 +355,6 @@ def main(args):
             if not os.path.exists("./models"):
                 os.makedirs("./models")
             saved_path = "./models/learned" + str(i)
-
-        print("Game {}".format(i))
 
         score, termination_condition, turns = play_game(giver=giver, guesser=guesser,
                                                         board_size=args.board_size, 
