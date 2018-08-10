@@ -8,7 +8,7 @@ import numpy as np
 
 from codenames.clue_givers.giver import Giver
 from codenames.embedding_handler import EmbeddingHandler
-from codenames.utils.game_utils import Clue, DEFAULT_NUM_CLUES, UNREVEALED
+from codenames.utils.game_utils import Clue, DEFAULT_NUM_CLUES, UNREVEALED, GOOD
 
 
 class HeuristicGiver(Giver):
@@ -62,7 +62,7 @@ class HeuristicGiver(Giver):
                       allIDs: List[int],
                       game_state: List[int],
                       score: int):
-        pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == 1]
+        pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == GOOD]
         # TODO consider neutral words and assassin
         neg_words = [word for word in board if word not in pos_words]
         available_targets = [word for word in pos_words if
