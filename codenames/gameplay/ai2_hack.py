@@ -9,6 +9,7 @@ import torch
 
 from codenames.clue_givers.giver import Giver, Clue
 from codenames.clue_givers.heuristic_giver import HeuristicGiver
+from codenames.clue_givers.wordnet_cluegiver import WordnetClueGiver
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 from codenames.guessers.heuristic_guesser import HeuristicGuesser
@@ -254,6 +255,8 @@ def main(args):
         giver = HeuristicGiver(embedding_handler)
     elif args.giver_type == "random":
         giver = RandomGiver(embedding_handler)
+    elif args.giver_type == "wordnet":
+        giver = WordnetClueGiver()
     else:
         raise NotImplementedError
 

@@ -124,6 +124,8 @@ class WordnetClueGiver(Giver):
 
             #now need to determine the intersection among the pairs of similar words so we can be sure that a clue
             #applies to all words
+            if len(common_synsets) < 1:
+                continue
             intersect = set(common_synsets[0])
             for s in common_synsets[1:]:
                 intersect.intersection_update(s)
