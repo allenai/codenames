@@ -20,7 +20,7 @@ class SimilarityThresholdPolicy(GuesserPolicy, nn.Module):
         self.W = nn.Parameter(w, requires_grad = True)
 
         #Similarity threshold
-        self.threshold = nn.Parameter(torch.Tensor([0.05]), requires_grad = True)
+        self.threshold = nn.Parameter(torch.Tensor([0.01]), requires_grad = True)
 
     '''
         clue_vector has shape 1 x word_embed_size (represents the embedding of the clue word)
@@ -43,7 +43,6 @@ def main():
     options_vect = torch.empty(10,50)
     policy = SimilarityThresholdPolicy(50)
     policy.forward(clue_vect, options_vect)
-    import pdb; pdb.set_trace()
 
 if __name__ == "__main__":
     main()

@@ -95,4 +95,4 @@ class LearnedGuesser(Guesser):
         loss.backward()
         self.optimizer.step()
         if save != "":
-            torch.save(save)
+            torch.save(self.policy, save)

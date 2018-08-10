@@ -1,9 +1,11 @@
 import sys
+import os
 
 from random import choices, shuffle
 from typing import List
 from termcolor import colored
 import argparse
+import torch
 
 from codenames.clue_givers.giver import Giver, Clue
 from codenames.clue_givers.heuristic_giver import HeuristicGiver
@@ -180,7 +182,7 @@ def _input(message, verbose):
     else:
         return ''
 
-def play_game(giver, guesser, board_size=5, board_data=None, verbose=True):
+def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, save=""):
     _print('||| initializing all modules.\n', verbose=verbose)
     game = GameWrapper(board_size, board_data)
     _print('||| data: {}.\n'.format(list(zip(game.engine.board, game.engine.owner))), verbose=verbose)
@@ -221,7 +223,10 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True):
         guess_list_rewards = game.apply_team1_guesses(first_valid_clue, guessed_words)
         _print('||| rewards: {}'.format(list(zip(guessed_words, guess_list_rewards))),
                verbose=verbose)
-        guesser.report_reward(guess_list_rewards)
+        if save != "":
+            guesser.report_reward(guess_list_rewards, save)
+        else:
+            guesser.report_reward(guess_list_rewards)
         turn += 1
 
     _print('\n||| termination condition: {}\n'.format(game.result), verbose=verbose)
@@ -244,9 +249,14 @@ def main(args):
     elif args.guesser_type == "random":
         guesser = RandomGuesser()
     elif args.guesser_type == "learned":
-        guesser = LearnedGuesser(embedding_handler,
-                                 policy=SimilarityThresholdPolicy(300),
-                                 learning_rate=0.01)
+        if args.load_model != "":
+            guesser = LearnedGuesser(embedding_handler,
+                                     policy=torch.load(args.load_model),
+                                     learning_rate=0.01)
+        else:
+            guesser = LearnedGuesser(embedding_handler,
+                                     policy=SimilarityThresholdPolicy(300),
+                                     learning_rate=0.01)
     else:
         raise NotImplementedError
     if args.interactive:
@@ -255,12 +265,20 @@ def main(args):
     else:
         scores = []
         num_wins = 0
-        for _ in range(args.num_games):
+        for i in range(args.num_games):
+            save = ""
+            if args.guesser_type == "learned" and (i % 100 == 0 or i == args.num_games - 1):
+                if not os.path.exists("./models"):
+                    os.makedirs("./models")
+                save = "./models/learned" + str(i)
+
             score = play_game(giver=giver, guesser=guesser,
-                              board_size=args.board_size, verbose=False)
+                              board_size=args.board_size, verbose=False,
+                              save=save)
             if score > 0:
                 num_wins += 1
             scores.append(score)
+
         mean_score = sum(scores)/len(scores)
         print(f"Played {args.num_games} games.")
         print(f"Team 1 won {num_wins} times.")
@@ -275,5 +293,6 @@ if __name__== "__main__":
     argparser.add_argument("--num-games", type=int, dest="num_games",
                            help="Number of games to play if not interactive (default=1000)",
                            default=1000)
+    argparser.add_argument("--load-model", dest="load_model", default="")
     args = argparser.parse_args()
     main(args)
