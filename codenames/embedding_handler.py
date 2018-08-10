@@ -18,22 +18,27 @@ class EmbeddingHandler:
         # int -> str
         self.index_to_word = {}
         # list of np arrays
-        self.embedding_weights = []
+        embedding_weights = []
 
         with open(embedding_file) as input_file:
             idx = 0
+            expected_embedding_size = None
             for line in input_file:
                 fields = line.strip().split()
                 if len(fields) == 2:
                     # This must be the first line with metadata.
+                    expected_embedding_size = int(fields[1])
+                    continue
+                if expected_embedding_size is not None and \
+                   len(fields[1:]) != expected_embedding_size:
                     continue
                 word = fields[0].lower()
                 vector = np.asarray([float(x) for x in fields[1:]])
-                self.embedding_weights.append(vector)
+                embedding_weights.append(vector)
                 self.word_indices[word] = idx
                 self.index_to_word[idx] = word
                 idx += 1
-        self.embedding_weights = np.asarray(self.embedding_weights)
+        self.embedding_weights = np.asarray(embedding_weights)
 
         logging.info("Found embeddings for {} words".format(len(self.embedding_weights)))
         assert len(self.embedding_weights) == len(self.word_indices)

@@ -53,7 +53,7 @@ class HeuristicGiver(Giver):
             clue_neg_words_similarities= np.dot(neg_words_vectors, clue_vector)
             min_clue_cosine = np.min(clue_pos_words_similarities)
 
-            logging.info('potential clue : {}'.format(clue_word))
+            #logging.info('potential clue : {}'.format(clue_word))
 
             max_neg_cosine = np.max(clue_neg_words_similarities)
 

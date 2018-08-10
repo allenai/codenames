@@ -1,6 +1,4 @@
 from typing import List
-from collections import namedtuple
-from codenames.embedding_handler import EmbeddingHandler
 from codenames.utils.game_utils import Clue
 
 class Giver:
