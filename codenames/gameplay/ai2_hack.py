@@ -14,6 +14,7 @@ import torch
 
 from codenames.clue_givers.giver import Giver, Clue
 from codenames.clue_givers.heuristic_giver import HeuristicGiver
+from codenames.clue_givers.wordnet_cluegiver import WordnetClueGiver
 from codenames.embedding_handler import EmbeddingHandler
 from codenames.guessers.guesser import Guesser
 from codenames.guessers.heuristic_guesser import HeuristicGuesser
@@ -284,6 +285,8 @@ def main(args):
         giver = HeuristicGiver(giver_embedding_handler)
     elif args.giver_type == "random":
         giver = RandomGiver(giver_embedding_handler)
+    elif args.giver_type == "wordnet":
+        giver = WordnetClueGiver()
     else:
         raise NotImplementedError
 
@@ -321,11 +324,11 @@ def main(args):
                                      learning_rate=0.01)
     elif args.guesser_type == "learnedstate":
         if args.load_model:
-            guesser = LearnedGuesser(embedding_handler,
+            guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=torch.load(args.load_model),
                                      learning_rate=0.01)
         else:
-            guesser = LearnedGuesser(embedding_handler,
+            guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=SimilarityThresholdGameStatePolicy(300),
                                      learning_rate=0.01)
     else:
