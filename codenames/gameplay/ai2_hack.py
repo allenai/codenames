@@ -310,7 +310,6 @@ def main(args):
         scores = []
         num_wins = 0
         for i in range(args.num_games):
-            print(i)
             saved_path = ""
             if args.guesser_type == "learned" and (i % 100 == 0 or i == args.num_games - 1):
                 if not os.path.exists("./models"):
