@@ -248,6 +248,7 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
                 break
             rewards_out.append((w, r))
         _print('||| rewards: {}\n'.format(rewards_out), verbose=verbose)
+
         if saved_path and game.is_game_over():
             guesser.report_reward(guess_list_rewards, saved_path)
         else:
@@ -393,6 +394,7 @@ def main(args):
             experiment_results_file.write('% of {}: {:.2f}\n'.format(_termination_condition, 1.0 * _count / len(all_scores)))
         experiment_results_file.write('avg. game turns = {:.2f}, std. of game turns = {:.2f}\n'.format(mean_turns, std_turns))
         experiment_results_file.write('avg. game score = {:.2f}, std. of game score = {:.2f}\n'.format(mean_score, std_score))
+
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
