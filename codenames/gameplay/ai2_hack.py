@@ -1,9 +1,10 @@
 import sys
 import os
 import re
-
+import tqdm
 import datetime
 from collections import defaultdict
+
 from random import choices, shuffle
 from typing import List
 from termcolor import colored
@@ -276,11 +277,12 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
     
 
 def main(args):
-    embedding_handler = EmbeddingHandler(args.embeddings_file)
+    guesser_embedding_handler = EmbeddingHandler(args.guesser_embeddings_file)
+    giver_embedding_handler = EmbeddingHandler(args.giver_embeddings_file)
     if args.giver_type == "heuristic":
-        giver = HeuristicGiver(embedding_handler)
+        giver = HeuristicGiver(giver_embedding_handler)
     elif args.giver_type == "random":
-        giver = RandomGiver(embedding_handler)
+        giver = RandomGiver(giver_embedding_handler)
     else:
         raise NotImplementedError
 
@@ -293,7 +295,9 @@ def main(args):
             line = line.strip()
             words = re.split('[;,]', line)
             if len(words) != args.board_size * args.board_size:
-                sys.stdout.write('WARNING: skipping game data |||{}||| due to a conflict with the specified board size: {}'.format(line, args.board_size))
+                if args.verbose:
+                    sys.stdout.write('WARNING: skipping game data |||{}||| due to a conflict with the specified board size: {}'.format(line, args.board_size))
+                continue
             all_game_data.append(line.strip())
     else:
         # If game data were not specified, we'd like to generate (args.num_games) random 
@@ -302,16 +306,16 @@ def main(args):
         all_game_data = [None] * args.num_games
 
     if args.guesser_type == "heuristic":
-        guesser = HeuristicGuesser(embedding_handler)
+        guesser = HeuristicGuesser(guesser_embedding_handler)
     elif args.guesser_type == "random":
         guesser = RandomGuesser()
     elif args.guesser_type == "learned":
         if args.load_model:
-            guesser = LearnedGuesser(embedding_handler,
+            guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=torch.load(args.load_model),
                                      learning_rate=0.01)
         else:
-            guesser = LearnedGuesser(embedding_handler,
+            guesser = LearnedGuesser(guesser_embedding_handler,
                                      policy=SimilarityThresholdPolicy(300),
                                      learning_rate=0.01)
     else:
@@ -321,9 +325,9 @@ def main(args):
     all_scores = []
     all_termination_conditions = defaultdict(int)
     all_turns = []
-    num_wins = 0
+    num_positive_score = 0
     start_time = datetime.datetime.now()
-    for i, board_data in enumerate(all_game_data):
+    for i, board_data in tqdm.tqdm(enumerate(all_game_data), desc="games played: "):
         saved_path = ""
         if args.guesser_type == "learned" and (i % 100 == 0 or i == args.num_games - 1):
             if not os.path.exists("./models"):
@@ -336,7 +340,7 @@ def main(args):
                                                         verbose=args.interactive,
                                                         saved_path=saved_path)
         if score > 0:
-            num_wins += 1
+            num_positive_score += 1
         all_scores.append(score)
         all_termination_conditions[termination_condition] += 1
         all_turns.append(turns)
@@ -346,25 +350,26 @@ def main(args):
         std_turns = np.std(all_turns)
 
         # log, for debugging purposes.
-        # this game's results
-        sys.stdout.write('||| last game score = {}, termination condition = {}, turns = {}\n'.format(score, termination_condition, turns))
-        # summary of all games' results
-        sys.stdout.write('|||\n')
-        sys.stdout.write("||| # of games played = {}, runtime = {}\n".format(len(all_scores), str(datetime.datetime.now() - start_time)))
-        sys.stdout.write(f"||| # of games won (by team1) = {num_wins}\n")
-        sys.stdout.write('||| avg. game score = {:.2f}, std. of game score = {:.2f}\n'.format(mean_score, std_score))
-        sys.stdout.write('||| avg. game turns = {:.2f}, std. of game turns = {:.2f}\n'.format(mean_turns, std_turns))
-        for _termination_condition, _count in all_termination_conditions.items():
-            sys.stdout.write('||| % of {}: {:.2f}\n'.format(_termination_condition, 1.0 * _count / len(all_scores)))
+        if args.verbose:
+            # this game's results
+            sys.stdout.write('||| last game score = {}, termination condition = {}, turns = {}\n'.format(score, termination_condition, turns))
+            # summary of all games' results
+            sys.stdout.write('|||\n')
+            sys.stdout.write("||| # of games played = {}, runtime = {}\n".format(len(all_scores), str(datetime.datetime.now() - start_time)))
+            sys.stdout.write(f"||| # of games won (by team1) = {num_positive_score}\n")
+            sys.stdout.write('||| avg. game score = {:.2f}, std. of game score = {:.2f}\n'.format(mean_score, std_score))
+            sys.stdout.write('||| avg. game turns = {:.2f}, std. of game turns = {:.2f}\n'.format(mean_turns, std_turns))
+            for _termination_condition, _count in all_termination_conditions.items():
+                sys.stdout.write('||| % of {}: {:.2f}\n'.format(_termination_condition, 1.0 * _count / len(all_scores)))
 
     with open(args.experiment_name + '.experiment', mode='wt') as experiment_results_file:
         experiment_results_file.write('name: {}\n'.format(args.experiment_name))
         experiment_results_file.write('runtime: {}\n'.format(str(datetime.datetime.now() - start_time)))
-        experiment_results_file.write('time finished: {}\n'.format(str()))
-        experiment_results_file.write(f"# of games played: {args.num_games}\n")
-        experiment_results_file.write(f"# of games won (by team1) = {num_wins}\n")
+        experiment_results_file.write('time finished: {}\n'.format(str(datetime.datetime.now())))
+        experiment_results_file.write("# of games played: {}\n".format(len(all_scores)))
+        experiment_results_file.write(f"# of games won (by team1) = {num_positive_score}\n")
         for _termination_condition, _count in all_termination_conditions.items():
-            sys.stdout.write('% of {}: {:.2f}\n'.format(_termination_condition, _count))
+            experiment_results_file.write('% of {}: {:.2f}\n'.format(_termination_condition, 1.0 * _count / len(all_scores)))
         experiment_results_file.write('avg. game turns = {:.2f}, std. of game turns = {:.2f}\n'.format(mean_turns, std_turns))
         experiment_results_file.write('avg. game score = {:.2f}, std. of game score = {:.2f}\n'.format(mean_score, std_score))
 
@@ -377,9 +382,12 @@ if __name__ == "__main__":
     argparser.add_argument("--num-games", type=int, dest="num_games",
                            help="Number of games to play if 'game-data' is not specified (default=1000)", required=False)
     argparser.add_argument("--game-data", type=str, default="data/codenames_dev.games")
-    argparser.add_argument("--embeddings-file", type=str, dest="embeddings_file",
+    argparser.add_argument("--guesser-embeddings-file", type=str, dest="guesser_embeddings_file",
+                           default="data/uk_embeddings.txt")
+    argparser.add_argument("--giver-embeddings-file", type=str, dest="giver_embeddings_file",
                            default="data/uk_embeddings.txt")
     argparser.add_argument("--load-model", dest="load_model", default=None)
     argparser.add_argument("--experiment-name", type=str, default="debug")
+    argparser.add_argument("--verbose", action="store_true")
     args = argparser.parse_args()
     main(args)
