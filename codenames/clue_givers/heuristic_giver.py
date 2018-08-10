@@ -93,10 +93,10 @@ class HeuristicGiver(Giver):
     '''List of Clues sorted by descending Cosine distance'''
     def get_next_clue(self, game_state: List[int],
                       score: int):
-        available_targets = [word for word in self.pos_words if game_state[self.board.index(word)] == -1]
-        available_civilians = [word for word in self.civilians if game_state[self.board.index(word)] == -1]
-        available_neg_words = [word for word in self.neg_words if game_state[self.board.index(word)] == -1]
-        available_assassins = [word for word in self.assassin if game_state[self.board.index(word)] == -1]
+        available_targets = [word for word in self.pos_words if game_state[self.board.tolist().index(word)] == -1]
+        available_civilians = [word for word in self.civilians if game_state[self.board.tolist().index(word)] == -1]
+        available_neg_words = [word for word in self.neg_words if game_state[self.board.tolist().index(word)] == -1]
+        available_assassins = [word for word in self.assassin if game_state[self.board.tolist().index(word)] == -1]
         num_revealed = 0
         for idx, value in enumerate(game_state):
             if value == -1:
