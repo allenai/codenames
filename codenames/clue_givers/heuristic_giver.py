@@ -8,7 +8,7 @@ import numpy as np
 
 from codenames.clue_givers.giver import Giver
 from codenames.embedding_handler import EmbeddingHandler
-from codenames.utils.game_utils import Clue, DEFAULT_NUM_CLUES, UNREVEALED, GOOD
+from codenames.utils.game_utils import Clue, DEFAULT_NUM_CLUES, UNREVEALED, GOOD, BAD, CIVILIAN, ASSASSIN, DEFAULT_NUM_TARGETS, CIVILIAN_PENALTY, ASSASSIN_PENALTY, MULTIGROUP_PENALTY
 
 
 class HeuristicGiver(Giver):
@@ -18,12 +18,14 @@ class HeuristicGiver(Giver):
         self.embedding_handler = embedding_handler
 
     ''' Returns list of n=NUM_CLUES of Clues for a given group of words'''
-    def _get_clues(self, pos_words_subset, neg_words, num_clues=DEFAULT_NUM_CLUES):
+    def _get_clues(self, pos_words_subset, neg_words, civ_words, ass_words, aggressive, num_clues=DEFAULT_NUM_CLUES,MULTIGROUP_PENALTY=MULTIGROUP_PENALTY):
         clues = []
         count = len(pos_words_subset)
 
         pos_words_vectors = self.embedding_handler.embed_words_list(pos_words_subset)
         neg_words_vectors = self.embedding_handler.embed_words_list(neg_words)
+        civ_words_vectors = self.embedding_handler.embed_words_list(civ_words)
+        ass_words_vectors = self.embedding_handler.embed_words_list(ass_words)
 
         if pos_words_vectors is None or neg_words_vectors is None:
             return None
@@ -31,9 +33,17 @@ class HeuristicGiver(Giver):
         mean_vector = pos_words_vectors.mean(axis=0)
         mean_vector /= np.sqrt(mean_vector.dot(mean_vector))
 
-        # shape (vocab_size,)
         cosines = np.dot(self.embedding_handler.embedding_weights, mean_vector).reshape(-1)
         closest = np.argsort(cosines)[::-1]
+
+        '''Skew 'good clues' towards larger groups of target words'''
+        if aggressive:
+            if count == 1:
+                MULTIGROUP_PENALTY += .1
+            elif count <= 3:
+                MULTIGROUP_PENALTY += .4
+            else:
+                MULTIGROUP_PENALTY += .7
 
         for i in range(num_clues):
             clue_index = closest[i]
@@ -43,7 +53,7 @@ class HeuristicGiver(Giver):
 
             clue_pos_words_similarities = np.dot(pos_words_vectors, clue_vector)
             clue_neg_words_similarities= np.dot(neg_words_vectors, clue_vector)
-            min_clue_cosine = np.min(clue_pos_words_similarities)
+            min_clue_cosine = np.min(clue_pos_words_similarities) + MULTIGROUP_PENALTY
 
             #logging.info('potential clue : {}'.format(clue_word))
 
@@ -51,6 +61,15 @@ class HeuristicGiver(Giver):
 
             if max_neg_cosine >= min_clue_cosine:
                 continue
+            if civ_words_vectors is not None:
+                clue_civ_words_similarities = np.dot(civ_words_vectors, clue_vector)
+                max_civ_cosine = np.max(clue_civ_words_similarities)
+                if max_civ_cosine >= min_clue_cosine - CIVILIAN_PENALTY:
+                    continue
+            if ass_words_vectors is not None:
+                max_ass_cosine = np.dot(ass_words_vectors,clue_vector)
+                if max_ass_cosine >= min_clue_cosine - ASSASSIN_PENALTY:
+                    continue
             clues.append((Clue(clue_word, pos_words_subset, count),
                           np.mean(clue_pos_words_similarities)))
         return clues
@@ -63,35 +82,41 @@ class HeuristicGiver(Giver):
                       game_state: List[int],
                       score: int):
         pos_words = [board[idx] for idx, val in enumerate(allIDs) if val == GOOD]
-        # TODO consider neutral words and assassin
-        neg_words = [word for word in board if word not in pos_words]
+        neg_words = [board[idx] for idx, val in enumerate(allIDs) if val == BAD]
+        civ_words = [board[idx] for idx, val in enumerate(allIDs) if val == CIVILIAN]
+        ass_words = [board[idx] for idx, val in enumerate(allIDs) if val == ASSASSIN]
+
         available_targets = [word for word in pos_words if
                              game_state[board.index(word)] == UNREVEALED]
+        available_neg = [word for word in neg_words if
+                             game_state[board.index(word)] == UNREVEALED]
+        available_civ = [word for word in civ_words if
+                             game_state[board.index(word)] == UNREVEALED]
+        available_ass = [word for word in ass_words if
+                             game_state[board.index(word)] == UNREVEALED]
+
+        num_revealed = 0
+        for idx, value in enumerate(game_state):
+            if value == -1:
+                num_revealed += 1
+        if num_revealed > len(game_state) / 2 and score < num_revealed:
+            aggressive = True
+        else:
+            aggressive = False
+
+        if len(available_targets) > DEFAULT_NUM_TARGETS:
+            num_words = DEFAULT_NUM_TARGETS
+        else:
+            num_words = len(available_targets)
+
         clues_by_group = []
-        num_words = len(available_targets)
         for count in range(num_words, 0, -1):
             for group in combinations(range(num_words), count):
                 target_group = [available_targets[i] for i in group]
-                clues_for_group = self._get_clues(target_group, neg_words)
+                clues_for_group = self._get_clues(target_group, available_neg, available_civ, available_ass, aggressive)
                 if clues_for_group is not None:
-                    clues_by_group.append(self._get_clues(target_group, neg_words))
+                    clues_by_group.append(self._get_clues(target_group, available_neg, available_civ, available_ass, aggressive))
         clues_by_group = list(chain.from_iterable(clues_by_group))
         clues_by_group.sort(key=operator.itemgetter(1))
         clues_by_group = [clue[0] for clue in clues_by_group]
         return clues_by_group
-
-
-def main():
-    # test_embed = EmbeddingHandler("./test_embeds.p")
-    test_embed = EmbeddingHandler('tests/fixtures/model.txt')
-    # import pdb; pdb.set_trace()
-    test_board = ["woman", "man", "girl", "boy", "blue", "cat", "queen", "king"]
-    test_allIDs = [1, 2, 2, 1, -1, 1, 2, 3]
-    test_target = ["woman", "boy"]
-    cg = HeuristicGiver(test_board, test_allIDs, test_embed)
-    logging.info('cllllue')
-    logging.info(cg.get_next_clue([-1, 2, 2, 1, -1, 1, 2, 3], 3))
-
-
-if __name__ == "__main__":
-    main()
