@@ -1,8 +1,6 @@
 from typing import List
 from codenames.utils.game_utils import Clue
 
-
-
 class Giver:
     """
     Parameters

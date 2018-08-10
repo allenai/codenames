@@ -7,6 +7,7 @@ import os
 import platform
 
 import numpy as np
+from termcolor import colored
 
 from codenames.gameplay.model import WordEmbedding
 from codenames.gameplay.config import config
@@ -24,7 +25,7 @@ class GameEngine(object):
         # TODO: Max length of 11 is hardcoded here and in print_board()
         with open(config.word_list) as f:
             _words = [line.rstrip().lower().replace(' ', '_') for line in f.readlines()]
-        self.words = np.array(_words, dtype='S11')
+        self.words = np.array(_words)
 
         # Initialize our word embedding model if necessary.
         self.model = WordEmbedding(config.embedding)
@@ -116,14 +117,25 @@ class GameEngine(object):
         self.assassin_word = self.board[self.owner == 0]
         self.num_turns = -1
 
-    def print_board(self, spymaster=False, clear_screen=True):
-
+    def print_board(self, spymaster=False, clear_screen=True, verbose=True):
+        if not verbose:
+            return
         if clear_screen:
             if platform.system() == 'Windows':
                 os.system('cls')
             else:
                 sys.stdout.write(chr(27) + '[2J')
 
+        sys.stdout.write('Legend:\n')
+        sys.stdout.write('  ' + colored('unrevealed TEAM1 card    ', 'blue'))
+        sys.stdout.write('  ' + colored('  revealed TEAM1 card    ', 'white', 'on_blue') + '\n') 
+        sys.stdout.write('  ' + colored('unrevealed TEAM2 card    ', 'red'))
+        sys.stdout.write('  ' + colored('  revealed TEAM2 card    ', 'white', 'on_red') + '\n') 
+        sys.stdout.write('  ' + colored('unrevealed NEUTRAL card  ', 'green'))
+        sys.stdout.write('  ' + colored('  revealed NEUTRAL card  ', 'white', 'on_green') + '\n') 
+        sys.stdout.write('  ' + colored('unrevealed ASSASSIN card ', 'grey'))
+        sys.stdout.write('  ' + colored('  revealed ASSASSIN card ', 'white', 'on_grey') + '\n\n') 
+        sys.stdout.write('Board:\n')
         board = self.board.reshape(self.size, self.size)
         owner = self.owner.reshape(self.size, self.size)
         visible = self.assignment_not_revealed.reshape(self.size, self.size)
@@ -131,15 +143,47 @@ class GameEngine(object):
         for row in range(self.size):
             for col in range(self.size):
                 word = board[row, col]
-                tag = '#<>-'[owner[row, col]]
+                foreground_color = None
+                background_color = None
+                attrs = []
                 if not visible[row, col]:
-                    word = tag * 11
-                elif not spymaster:
-                    tag = ' '
+                    foreground_color = 'white'
+                    if owner[row, col] == 0:
+                        background_color = 'on_grey'
+                        attrs.append('bold')
+                    elif owner[row, col] == 1:
+                        background_color = 'on_blue'
+                    elif owner[row, col] == 2:
+                        background_color = 'on_red'
+                    elif owner[row, col] == 3:
+                        background_color = 'on_green'
+                    else:
+                        raise RuntimeError('invalid owner.')
+                else:
+                    background_color = None
+                    if owner[row, col] == 0:
+                        foreground_color = 'grey'
+                        attrs.append('bold')
+                    elif owner[row, col] == 1:
+                        foreground_color = 'blue'
+                    elif owner[row, col] == 2:
+                        foreground_color = 'red'
+                    elif owner[row, col] == 3:
+                        foreground_color = 'green'
+                    else:
+                        raise RuntimeError('invalid owner.')
                 if not spymaster or owner[row, col] in (0, 1, 2):
                     word = word.upper()
-                sys.stdout.write('{0}{1:11s} '.format(tag, word))
+
+                # format cell content
+                cell = '{:^11} '.format(word)
+                if background_color:
+                    cell = colored(cell, foreground_color, background_color, attrs = attrs)
+                else:
+                    cell = colored(cell, foreground_color, attrs = attrs)
+                sys.stdout.write(cell)
             sys.stdout.write('\n')
+        sys.stdout.write('\n')
 
     def play_computer_spymaster(self, gamma=1.0, verbose=True):
 
