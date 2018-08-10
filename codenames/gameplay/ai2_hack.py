@@ -143,6 +143,7 @@ class RandomGiver(Giver):
     '''
     A clue giver who randomly picks the clue word from a vocabulary.
     '''
+
     def __init__(self, embedding_handler):
         self.vocab = list(embedding_handler.word_indices.keys())
 
@@ -162,6 +163,7 @@ class RandomGuesser(Guesser):
     '''
     A guesser who randomly picks among unrevealed board words.
     '''
+
     def guess(self, board, clue_word, count, game_state, cumulative_score):
         unrevealed_words = []
         for i in range(len(game_state)):
@@ -172,9 +174,11 @@ class RandomGuesser(Guesser):
     def report_reward(self, reward):
         pass
 
+
 def _print(message, verbose):
     if verbose:
         sys.stdout.write(message)
+
 
 def _input(message, verbose):
     if verbose:
@@ -182,14 +186,16 @@ def _input(message, verbose):
     else:
         return ''
 
+
 def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved_path=None):
     _print('||| initializing all modules.\n', verbose=verbose)
     game = GameWrapper(board_size, board_data)
-    _print('||| data: {}.\n'.format(list(zip(game.engine.board, game.engine.owner))), verbose=verbose)
+    _print('||| data: {}.\n'.format(list(zip(game.engine.board, game.engine.owner))),
+           verbose=verbose)
 
     turn = 1
     while not game.is_game_over():
-        if turn == 1: 
+        if turn == 1:
             game.engine.print_board(spymaster=True, verbose=verbose)
         _input('\n||| press ENTER to see the next clue for team1.', verbose=verbose)
 
@@ -241,8 +247,9 @@ def play_game(giver, guesser, board_size=5, board_data=None, verbose=True, saved
     score = game.cumulative_score if game.result is not None else 0
     return score
 
+
 def main(args):
-    embedding_handler = EmbeddingHandler('data/uk_embeddings.txt')
+    embedding_handler = EmbeddingHandler(args.embeddings_file)
     if args.giver_type == "heuristic":
         giver = HeuristicGiver(embedding_handler)
     elif args.giver_type == "random":
@@ -291,7 +298,7 @@ def main(args):
         print(f"Average score is {mean_score}")
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--guesser", type=str, dest="guesser_type", default="heuristic")
     argparser.add_argument("--giver", type=str, dest="giver_type", default="heuristic")
@@ -300,6 +307,7 @@ if __name__== "__main__":
     argparser.add_argument("--num-games", type=int, dest="num_games",
                            help="Number of games to play if not interactive (default=1000)",
                            default=1000)
+    argparser.add_argument("--embeddings_file", type=str, dest="embeddings_file", default="data/uk_embeddings.txt")
     argparser.add_argument("--load-model", dest="load_model", default=None)
     args = argparser.parse_args()
     main(args)
