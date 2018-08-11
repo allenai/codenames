@@ -61,7 +61,7 @@ class LearnedGuesser(Guesser):
                                         torch.Tensor(option_vectors))
 
         distribution = Categorical(policy_output)
-        predictions = distribution.sample(torch.Size((count,)))
+        predictions = distribution.sample(torch.Size((count+1,)))
 
         # Return guesses
         guesses = [known_options[int(prediction)] for prediction in predictions]
